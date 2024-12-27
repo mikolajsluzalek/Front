@@ -1,0 +1,26 @@
+﻿@page "/kontakt"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="margin-top: 100px">
+    <MudGrid Class="d-flex justify-center">
+        <MudItem md="6" Class="d-flex flex-column align-center mb-4">
+            <MudItem>
+                <MudText Typo=Typo.body1 Class="mb-2 text-center">
+                    Wybierz opcję „Dla Firmy”, aby dowiedzieć się, jak możemy pomóc Twojej firmie. Znajdziesz tutaj rozwiązania dostosowane do potrzeb biznesowych, które zwiększą efektywność i konkurencyjność Twojej organizacji.
+                </MudText>
+            </MudItem>
+            <MudButton Variant=Variant.Filled Color=Color.Secondary Href="/Kontakt/Klient">Dla Firmy</MudButton>
+        </MudItem>
+
+        <MudItem md="6" Class="d-flex flex-column align-center mb-4">
+            <MudItem>
+
+                <MudText Typo=Typo.body1 Class="mb-2 text-center">
+                    Wybierz opcję „Dla Pracownika”, aby odkryć możliwości wsparcia dla pracowników i zasobów personalnych, które wspomagają rozwój kariery oraz komfort pracy w Twojej firmie.
+                </MudText>
+            </MudItem>
+            <MudButton Variant=Variant.Filled Color=Color.Secondary Href="/Kontakt/Pracownik">Dla Pracownika</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

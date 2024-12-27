@@ -1,0 +1,20 @@
+[
+    {
+        "Imię":"Karol",
+        "Nazwisko":"Krawczyk",
+        "Typ dokumentu":"Wiza",
+        "Data":"14.12.2024"
+    },
+    {
+        "Imię":"Maciej",
+        "Nazwisko":"Cebula",
+        "Typ dokumentu":"BHP",
+        "Data":"24.12.2024"
+    },
+    {
+        "Imię":"Andrzej",
+        "Nazwisko":"Gołota",
+        "Typ dokumentu":"Lekarskie",
+        "Data":"01.01.2025"
+    }
+]

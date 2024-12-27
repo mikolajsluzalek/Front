@@ -1,0 +1,144 @@
+﻿@page "/panel-glowny"
+@using System.Net.Http.Json
+@inject IJSRuntime JSRuntime
+
+
+<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudSpacer/>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px;">
+                <MudText Typo="Typo.h6" Align="Align.Center">Ilość pracowników</MudText>
+                <MudChart ChartType="ChartType.Donut" LegendPosition="Position.Bottom" Width="400px" Height="300px"
+                          InputData="@data" InputLabels="@labels">
+                </MudChart>
+            </MudPaper>
+        </MudItem>
+        <MudSpacer />
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px">
+                <MudText Typo="Typo.h6" Align="Align.Center">Zapełnienie kwater</MudText>
+                <div>
+                    <MudChart ChartType="ChartType.StackedBar" ChartSeries="@Series" LegendPosition="Position.Bottom" XAxisLabels="@XAxisLabels" Width="100%" Height="300px"></MudChart>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudSpacer />
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px">
+                <MudText Typo="Typo.h6" Align="Align.Center">Zbliżające się przeglądy</MudText>
+                <MudTimeline Modifiers="true">
+                    <MudTimelineItem Color="Color.Error">
+                        <MudText Typo="Typo.button">SC125CK</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">17.12.2024 12:30</MudText>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Warning" TimelineAlign="TimelineAlign.End">
+                        <MudText Typo="Typo.body2">SC799AC</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">27.12.2024 14:40</MudText>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Warning" TimelineAlign="TimelineAlign.End">
+                        <MudText Typo="Typo.body2">SC546AP</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">02.01.2025 10:00</MudText>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Warning" TimelineAlign=" TimelineAlign.End">
+                        <MudText Typo="Typo.button">WE771AC</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">12.01.2025 9:30</MudText>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Info">
+                        <MudText Typo="Typo.button">WE271BD</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">12.02.2025 15:00</MudText>
+                    </MudTimelineItem>
+                </MudTimeline>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudSpacer/>
+        <MudItem xs="4" sm="8">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 400px;">
+                <MudTable Items="@Elements" Dense="true" Hover="false" Striped="true" Filter="new Func<Element,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Periodic Elements</MudText>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Imię</MudTh>
+                        <MudTh>Nazwisko</MudTh>
+                        <MudTh>Typ dokumentu</MudTh>
+                        <MudTh>Data</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Imię">@context.Imie</MudTd>
+                            <MudTd DataLabel="Nazwisko">@context.Nazwisko</MudTd>
+                            <MudTd DataLabel="Typ dokumentu">@context.TypDokumentu</MudTd>
+                        <MudTd DataLabel="Data">@context.Data</MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+            </MudPaper>
+        </MudItem>
+        <MudSpacer />
+    </MudGrid>
+
+</MudContainer>
+
+
+@code {
+    // Donut Chart
+    public double[] data = { 47, 99, 17, 5 };
+    public string[] labels = { "Polo Market", "Elektrolux", "Wulkan SA.", "Huta" };
+
+
+    // Stacked Chart
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "Zajęte", Data = new double[] { 49, 74, 8, 14, 7} },
+        new ChartSeries() { Name = "Wolne", Data = new double[] { 12, 16, 48, 0, 7 } },
+    };
+    public string[] XAxisLabels = { "ul. Tczewska 7", "ul. Fabryczna 11", "ul. Kazimierza 44", "ul. Pułaska 2/3", "ul. Górna 13/37"};
+
+    // Table
+    private string searchString1 = "";
+    private Element selectedItem1 = null;
+    private HashSet<Element> selectedItems = new HashSet<Element>();
+
+    private IEnumerable<Element> Elements = new List<Element>();
+
+    /*protected override async Task OnInitializedAsync()
+    {
+        var json = await JSRuntime.InvokeAsync<string>("fetch", new object[] { "Dane_Dokumentow.json" });
+        Elements = System.Text.Json.JsonSerializer.Deserialize<List<Element>>(json);
+    }
+    */
+    private bool FilterFunc1(Element element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(Element element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Imie.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Nazwisko.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ($"{element.TypDokumentu} {element.Data}".Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    
+
+    // Define the Element class to match the JSON structure
+    public class Element
+    {
+        public string Imie { get; set; }
+        public string Nazwisko { get; set; }
+        public string TypDokumentu { get; set; }
+        public string Data { get; set; }
+    }
+
+}

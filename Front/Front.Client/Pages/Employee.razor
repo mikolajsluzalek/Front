@@ -1,0 +1,166 @@
+﻿@page "/pracownicy"
+@using System.Net.Http.Json
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<div style="margin-top: 2rem;" />
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudTable Items="@EmployeeList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
+              EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
+              ApplyButtonPosition="TableApplyButtonPosition.End"
+              RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista Pracowników</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Szukaj" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <ColGroup>
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+            <col style="width:150px;" />
+        </ColGroup>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDetails, object>(x => x.FirstName)">Imię</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDetails, object>(x => x.LastName)">Nazwisko</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDetails, object>(x => x.Pesel)">Pesel</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDetails, object>(x => x.PassportNumber)">Numer Paszportu</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EmployeeDetails, object>(x => x.DateOfBirth)">Data Urodzenia</MudTableSortLabel></MudTh>
+            <MudTh>Akcje</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Imię">@context.FirstName</MudTd>
+                <MudTd DataLabel="Nazwisko">@context.LastName</MudTd>
+                <MudTd DataLabel="Pesel">@context.Pesel</MudTd>
+                <MudTd DataLabel="Numer Paszportu">@context.PassportNumber</MudTd>
+                <MudTd DataLabel="Data Urodzenia">@context.DateOfBirth.ToString("dd-MM-yyyy")</MudTd>
+                <MudTd DataLabel="Akcje">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
+                        Szczegóły
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="Imię">
+                    <MudTextField @bind-Value="context.FirstName" Required />
+             </MudTd>
+             <MudTd DataLabel="Nazwisko">
+                 <MudTextField @bind-Value="context.LastName" Required />
+             </MudTd>
+             <MudTd DataLabel="Pesel">
+                 <MudTextField @bind-Value="context.Pesel" Required />
+             </MudTd>
+             <MudTd DataLabel="Numer Paszportu">
+                 <MudTextField @bind-Value="context.PassportNumber" Required />
+             </MudTd>
+             <MudTd DataLabel="Data Urodzenia">
+                 <MudTextField @bind-Value="context.DateOfBirth" InputVariant="Variant.Outlined" Required />
+             </MudTd>
+         </RowEditingTemplate>
+         <PagerContent>
+             <MudTablePager />
+         </PagerContent>
+         <EditButtonContent Context="button">
+             <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+         </EditButtonContent>
+     </MudTable>
+ </MudContainer>
+
+ <MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
+     <DialogContent>
+         <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Pracownika</MudText>
+         <MudDivider Class="mb-2" />
+         <MudText><strong>Imię:</strong> @selectedEmployee?.FirstName</MudText>
+            <MudText><strong>Nazwisko:</strong> @selectedEmployee?.LastName</MudText>
+            <MudText><strong>Pesel:</strong> @selectedEmployee?.Pesel</MudText>
+            <MudText><strong>Numer Paszportu:</strong> @selectedEmployee?.PassportNumber</MudText>
+            <MudText><strong>Data Urodzenia:</strong> @selectedEmployee?.DateOfBirth.ToString("dd-MM-yyyy")</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
+                Zamknij
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+    @code {
+    private string searchString = string.Empty;
+    private List<EmployeeDetails> EmployeeList = new List<EmployeeDetails>
+    {
+        new EmployeeDetails
+        {
+            FirstName = "Jan",
+            LastName = "Kowalski",
+            Pesel = "92051212345",
+            PassportNumber = "AB1234567",
+            DateOfBirth = new DateTime(1992, 5, 12)
+        },
+        new EmployeeDetails
+        {
+            FirstName = "Anna",
+            LastName = "Nowak",
+            Pesel = "88030298765",
+            PassportNumber = "CD7654321",
+            DateOfBirth = new DateTime(1988, 3, 2)
+        }
+    };
+
+    private EmployeeDetails selectedEmployee;
+    private EmployeeDetails employeeToDelete;
+    private bool isDetailsDialogOpen = false;
+    private bool isDeleteDialogOpen = false;
+
+    private void ShowDetails(EmployeeDetails employee)
+    {
+        selectedEmployee = employee;
+        isDetailsDialogOpen = true;
+    }
+
+    private void BackupItem(object employee)
+    {
+        employeeBeforeEdit = new EmployeeDetails
+            {
+                FirstName = ((EmployeeDetails)employee).FirstName,
+                LastName = ((EmployeeDetails)employee).LastName,
+                Pesel = ((EmployeeDetails)employee).Pesel,
+                PassportNumber = ((EmployeeDetails)employee).PassportNumber,
+                DateOfBirth = ((EmployeeDetails)employee).DateOfBirth
+            };
+    }
+
+    private void ResetItemToOriginalValues(object employee)
+    {
+        ((EmployeeDetails)employee).FirstName = employeeBeforeEdit.FirstName;
+        ((EmployeeDetails)employee).LastName = employeeBeforeEdit.LastName;
+        ((EmployeeDetails)employee).Pesel = employeeBeforeEdit.Pesel;
+        ((EmployeeDetails)employee).PassportNumber = employeeBeforeEdit.PassportNumber;
+        ((EmployeeDetails)employee).DateOfBirth = employeeBeforeEdit.DateOfBirth;
+    }
+
+    private void ItemHasBeenCommitted(object employee)
+    {
+        var editedEmployee = (EmployeeDetails)employee;
+
+        if (editedEmployee.DateOfBirth == null)
+        {
+            Snackbar.Add("Data urodzenia musi być podana.", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add($"Pracownik {editedEmployee.FirstName} {editedEmployee.LastName} został zaktualizowany.", Severity.Success);
+    }
+
+    private EmployeeDetails employeeBeforeEdit;
+
+    public class EmployeeDetails
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Pesel { get; set; }
+        public string PassportNumber { get; set; }
+        public DateTime DateOfBirth { get; set; }
+    }
+}

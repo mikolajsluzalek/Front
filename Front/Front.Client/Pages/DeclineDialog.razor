@@ -1,0 +1,20 @@
+﻿<MudDialog>
+    <TitleContent>
+        Anuluj
+    </TitleContent>
+    <DialogContent>
+        Czy na pewno chcesz opuścić formularz?
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Pozostań</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Opuść</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog.Cancel();
+}

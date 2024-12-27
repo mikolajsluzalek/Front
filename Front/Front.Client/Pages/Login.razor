@@ -1,0 +1,27 @@
+﻿@page "/login"
+
+<MudContainer MaxWidth="MaxWidth.Small" Style="display: flex; justify-content: center; align-items: center; height: 50vh;">
+    <MudPaper Style="padding: 2rem; border-radius: 8px;" MaxWidth="400" Width="100%" Elevation="4">
+        <MudText Typo="Typo.h4" Align="Align.Center">Logowanie</MudText>
+        <MudForm @ref="form" OnValidSubmit="HandleLogin">
+            <MudTextField @bind-Value="_login" Label="Login" Required="true" FullWidth="true" />
+            <MudTextField @bind-Value="_password" Label="Hasło" Required="true" FullWidth="true" />
+            <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" OnClick="@(()=>HandleLogin())">
+                Zaloguj
+            </MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm form;
+    private string _login { get; set; }
+    private string _password { get; set; }
+
+    private async Task HandleLogin()
+    {
+        // Logika obsługi logowania
+        await Task.Delay(500); // Symulacja opóźnienia
+        Console.WriteLine($"Login: {_login}, Hasło: {_password}");
+    }
+}

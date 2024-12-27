@@ -1,0 +1,161 @@
+﻿@page "/kwatery"
+@using System.Net.Http.Json
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<div style="margin-top: 2rem;" />
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudTable Items="@AccommodationList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
+              EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
+              ApplyButtonPosition="TableApplyButtonPosition.End"
+              RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista Kwater</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Szukaj" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <ColGroup>
+            <col />
+            <col />
+            <col />
+            <col />
+            <col style="width:150px;" />
+        </ColGroup>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<AccommodationDetails, object>(x => x.City)">Miasto</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AccommodationDetails, object>(x => x.Address)">Adres</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AccommodationDetails, object>(x => x.NumberOfPlaces)">Ilość Miejsc</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AccommodationDetails, object>(x => x.TotalCost)">Koszt Łączny</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<AccommodationDetails, object>(x => x.CostPerEmployee)">Koszt/Pracownik</MudTableSortLabel></MudTh>
+            <MudTh>Akcje</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Miasto">@context.City</MudTd>
+                <MudTd DataLabel="Adres">@context.Address</MudTd>
+                <MudTd DataLabel="Ilość Miejsc">@context.NumberOfPlaces</MudTd>
+                <MudTd DataLabel="Koszt Łączny">@context.TotalCost.ToString("C")</MudTd>
+                <MudTd DataLabel="Koszt/Pracownik">@context.CostPerEmployee.ToString("C")</MudTd>
+                <MudTd DataLabel="Akcje">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
+                        Szczegóły
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="Miasto">
+                    <MudTextField @bind-Value="context.City" Required />
+             </MudTd>
+             <MudTd DataLabel="Adres">
+                 <MudTextField @bind-Value="context.Address" Required />
+             </MudTd>
+             <MudTd DataLabel="Ilość Miejsc">
+                 <MudNumericField @bind-Value="context.NumberOfPlaces" Required />
+             </MudTd>
+             <MudTd DataLabel="Koszt Łączny">
+                 <MudNumericField @bind-Value="context.TotalCost" Required />
+             </MudTd>
+             <MudTd DataLabel="Koszt/Pracownik">
+                 <MudNumericField @bind-Value="context.CostPerEmployee" Required />
+             </MudTd>
+         </RowEditingTemplate>
+         <PagerContent>
+             <MudTablePager />
+         </PagerContent>
+         <EditButtonContent Context="button">
+             <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+         </EditButtonContent>
+     </MudTable>
+ </MudContainer>
+
+ <MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
+     <DialogContent>
+         <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Kwatery</MudText>
+         <MudDivider Class="mb-2" />
+         <MudText><strong>Miasto:</strong> @selectedAccommodation?.City</MudText>
+            <MudText><strong>Adres:</strong> @selectedAccommodation?.Address</MudText>
+            <MudText><strong>Ilość Miejsc:</strong> @selectedAccommodation?.NumberOfPlaces</MudText>
+            <MudText><strong>Koszt Łączny:</strong> @selectedAccommodation?.TotalCost.ToString("C")</MudText>
+            <MudText><strong>Koszt/Pracownik:</strong> @selectedAccommodation?.CostPerEmployee.ToString("C")</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
+                Zamknij
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+
+    @code {
+    private string searchString = string.Empty;
+    private List<AccommodationDetails> AccommodationList = new List<AccommodationDetails>
+    {
+        new AccommodationDetails
+        {
+            City = "Warszawa",
+            Address = "ul. Przykładowa 10",
+            NumberOfPlaces = 5,
+            TotalCost = 2500.00m,
+            CostPerEmployee = 500.00m
+        },
+        new AccommodationDetails
+        {
+            City = "Kraków",
+            Address = "ul. Rynkowa 3",
+            NumberOfPlaces = 3,
+            TotalCost = 1800.00m,
+            CostPerEmployee = 600.00m
+        }
+    };
+
+    private AccommodationDetails selectedAccommodation;
+    private AccommodationDetails accommodationBeforeEdit;
+    private bool isDetailsDialogOpen = false;
+
+    private void ShowDetails(AccommodationDetails accommodation)
+    {
+        selectedAccommodation = accommodation;
+        isDetailsDialogOpen = true;
+    }
+
+    private void BackupItem(object accommodation)
+    {
+        accommodationBeforeEdit = new AccommodationDetails
+            {
+                City = ((AccommodationDetails)accommodation).City,
+                Address = ((AccommodationDetails)accommodation).Address,
+                NumberOfPlaces = ((AccommodationDetails)accommodation).NumberOfPlaces,
+                TotalCost = ((AccommodationDetails)accommodation).TotalCost,
+                CostPerEmployee = ((AccommodationDetails)accommodation).CostPerEmployee
+            };
+    }
+
+    private void ResetItemToOriginalValues(object accommodation)
+    {
+        ((AccommodationDetails)accommodation).City = accommodationBeforeEdit.City;
+        ((AccommodationDetails)accommodation).Address = accommodationBeforeEdit.Address;
+        ((AccommodationDetails)accommodation).NumberOfPlaces = accommodationBeforeEdit.NumberOfPlaces;
+        ((AccommodationDetails)accommodation).TotalCost = accommodationBeforeEdit.TotalCost;
+        ((AccommodationDetails)accommodation).CostPerEmployee = accommodationBeforeEdit.CostPerEmployee;
+    }
+
+    private void ItemHasBeenCommitted(object accommodation)
+    {
+        var editedAccommodation = (AccommodationDetails)accommodation;
+
+        if (editedAccommodation.NumberOfPlaces <= 0 || editedAccommodation.TotalCost <= 0 || editedAccommodation.CostPerEmployee <= 0)
+        {
+            Snackbar.Add("Wszystkie wartości muszą być większe od zera.", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add($"Kwatera w {editedAccommodation.City} została zaktualizowana.", Severity.Success);
+    }
+
+    public class AccommodationDetails
+    {
+        public string City { get; set; }
+        public string Address { get; set; }
+        public int NumberOfPlaces { get; set; }
+        public decimal TotalCost { get; set; }
+        public decimal CostPerEmployee { get; set; }
+    }
+}
