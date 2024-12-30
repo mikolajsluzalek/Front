@@ -5,13 +5,13 @@
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
-    <MudTable Items="@CarList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
+    <MudTable Items="@VehicleList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
               EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
               ApplyButtonPosition="TableApplyButtonPosition.End"
               RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted"
-              Filter="new Func<CarDetails,bool>(FilterFunc)">
+              Filter="new Func<VehicleDetails,bool>(FilterFunc)">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Lista Samochodów</MudText>
+            <MudText Typo="Typo.h6">Lista Pojazdów</MudText>
             <MudSpacer />
             <MudTextField @bind-Value="searchString" Placeholder="Szukaj" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
@@ -25,160 +25,121 @@
             <col style="width:100px;" />
         </ColGroup>
         <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.Model)">Model</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.RegistrationNumber)">Numer rejestracyjny</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.VIN)">VIN</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.TechnicalInspectionDue)">Przegląd Do</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.InsuranceDue)">Ubezpieczenie Do</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<CarDetails, object>(x => x.MonthlyFee)">Miesięczna opłata</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.Make)">Marka</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.Model)">Model</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.LicensePlate)">Tablica Rejestracyjna</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.ServiceDue)">Serwis Do</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.LeaseEnd)">Koniec Leasingu</MudTableSortLabel></MudTh>
             <MudTh>Akcje</MudTh>
         </HeaderContent>
         <RowTemplate>
+            <MudTd DataLabel="Marka">@context.Make</MudTd>
             <MudTd DataLabel="Model">@context.Model</MudTd>
-                <MudTd DataLabel="Numer rejestracyjny">@context.RegistrationNumber</MudTd>
-                <MudTd DataLabel="VIN">@context.VIN</MudTd>
-                <MudTd DataLabel="Przegląd Do">@context.TechnicalInspectionDue?.ToString("dd-MM-yyyy")</MudTd>
-                <MudTd DataLabel="Ubezpieczenie Do">@context.InsuranceDue?.ToString("dd-MM-yyyy")</MudTd>
-                <MudTd DataLabel="Miesięczna opłata">@context.MonthlyFee.ToString("C")</MudTd>
-                <MudTd DataLabel="Akcje">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
-                        Szczegóły
-                    </MudButton>
-                </MudTd>
-            </RowTemplate>
-            <RowEditingTemplate>
-                <MudTd DataLabel="Model">
-                    <MudTextField @bind-Value="context.Model" Required />
-             </MudTd>
-             <MudTd DataLabel="Numer rejestracyjny">
-                 <MudTextField @bind-Value="context.RegistrationNumber" Required />
-             </MudTd>
-             <MudTd DataLabel="VIN">
-                 <MudTextField @bind-Value="context.VIN" Required />
-             </MudTd>
-             <MudTd DataLabel="Przegląd Do">
-                 <MudTextField @bind-Value="context.TechnicalInspectionDue" InputVariant="Variant.Outlined" Required />
-             </MudTd>
-             <MudTd DataLabel="Ubezpieczenie Do">
-                 <MudTextField @bind-Value="context.InsuranceDue" InputVariant="Variant.Outlined" Required />
-             </MudTd>
-             <MudTd DataLabel="Miesięczna opłata">
-                 <MudNumericField @bind-Value="context.MonthlyFee" Required Min="0" />
-             </MudTd>
-         </RowEditingTemplate>
-         <PagerContent>
-             <MudTablePager />
-         </PagerContent>
-         <EditButtonContent Context="button">
-             <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
-         </EditButtonContent>
-     </MudTable>
- </MudContainer>
+            <MudTd DataLabel="Tablica Rejestracyjna">@context.LicensePlate</MudTd>
+            <MudTd DataLabel="Serwis Do">@context.ServiceDue?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Koniec Leasingu">@context.LeaseEnd?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Akcje">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
+                    Szczegóły
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+</MudContainer>
 
- <MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
-     <DialogContent>
-         <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Samochodu</MudText>
-         <MudDivider Class="mb-2" />
-         <MudText><strong>Model:</strong> @selectedCar?.Model</MudText>
-            <MudText><strong>Numer Rejestracyjny:</strong> @selectedCar?.RegistrationNumber</MudText>
-            <MudText><strong>VIN:</strong> @selectedCar?.VIN</MudText>
-            <MudText><strong>Przegląd Do:</strong> @selectedCar?.TechnicalInspectionDue?.ToString("dd-MM-yyyy")</MudText>
-            <MudText><strong>Ubezpieczenie Do:</strong> @selectedCar?.InsuranceDue?.ToString("dd-MM-yyyy")</MudText>
-            <MudText><strong>Miesięczna Opłata:</strong> @selectedCar?.MonthlyFee.ToString("C")</MudText>
-        </DialogContent>
-        <DialogActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
-                Zamknij
-            </MudButton>
-        </DialogActions>
-    </MudDialog>
+<MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Pojazdu</MudText>
+        <MudDivider Class="mb-2" />
+        <MudText><strong>Marka:</strong> @selectedVehicle?.Make</MudText>
+        <MudText><strong>Model:</strong> @selectedVehicle?.Model</MudText>
+        <MudText><strong>Tablica Rejestracyjna:</strong> @selectedVehicle?.LicensePlate</MudText>
+        <MudText><strong>Serwis Do:</strong> @selectedVehicle?.ServiceDue?.ToString("dd-MM-yyyy")</MudText>
+        <MudText><strong>Koniec Leasingu:</strong> @selectedVehicle?.LeaseEnd?.ToString("dd-MM-yyyy")</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
+            Zamknij
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
-    @code {
+@code {
     private string searchString = string.Empty;
-    private List<CarDetails> CarList = new List<CarDetails>
+    private List<VehicleDetails> VehicleList = new List<VehicleDetails>
     {
-        new CarDetails
+        new VehicleDetails
         {
-            Model = "Toyota Corolla",
-            RegistrationNumber = "WX12345",
-            VIN = "1HGBH41JXMN109186",
-            TechnicalInspectionDue = DateTime.Now.AddMonths(12),
-            InsuranceDue = DateTime.Now.AddMonths(6),
-            MonthlyFee = 1500
+            Make = "Toyota",
+            Model = "RAV4",
+            LicensePlate = "WX67890",
+            ServiceDue = DateTime.Now.AddMonths(5),
+            LeaseEnd = DateTime.Now.AddMonths(12)
         },
-        new CarDetails
+        new VehicleDetails
         {
-            Model = "Ford Focus",
-            RegistrationNumber = "KR54321",
-            VIN = "1HGCM82633A123456",
-            TechnicalInspectionDue = DateTime.Now.AddMonths(10),
-            InsuranceDue = DateTime.Now.AddMonths(4),
-            MonthlyFee = 1800
+            Make = "Honda",
+            Model = "Civic",
+            LicensePlate = "KR12345",
+            ServiceDue = DateTime.Now.AddMonths(3),
+            LeaseEnd = DateTime.Now.AddMonths(8)
         }
     };
 
-    private void BackupItem(object car)
-    {
-        carBeforeEdit = new CarDetails
-            {
-                Model = ((CarDetails)car).Model,
-                RegistrationNumber = ((CarDetails)car).RegistrationNumber,
-                VIN = ((CarDetails)car).VIN,
-                TechnicalInspectionDue = ((CarDetails)car).TechnicalInspectionDue,
-                InsuranceDue = ((CarDetails)car).InsuranceDue,
-                MonthlyFee = ((CarDetails)car).MonthlyFee
-            };
-    }
+    private VehicleDetails vehicleBeforeEdit;
+    private VehicleDetails selectedVehicle;
+    private bool isDetailsDialogOpen = false;
 
-    private void ResetItemToOriginalValues(object car)
+    private void BackupItem(object vehicle)
     {
-        ((CarDetails)car).Model = carBeforeEdit.Model;
-        ((CarDetails)car).RegistrationNumber = carBeforeEdit.RegistrationNumber;
-        ((CarDetails)car).VIN = carBeforeEdit.VIN;
-        ((CarDetails)car).TechnicalInspectionDue = carBeforeEdit.TechnicalInspectionDue;
-        ((CarDetails)car).InsuranceDue = carBeforeEdit.InsuranceDue;
-        ((CarDetails)car).MonthlyFee = carBeforeEdit.MonthlyFee;
-    }
-
-    private void ItemHasBeenCommitted(object car)
-    {
-        var editedCar = (CarDetails)car;
-
-        if (editedCar.TechnicalInspectionDue == null || editedCar.InsuranceDue == null)
+        vehicleBeforeEdit = new VehicleDetails
         {
-            Snackbar.Add("Daty muszą być wybrane.", Severity.Error);
-            return;
-        }
-
-        Snackbar.Add($"Samochód {editedCar.Model} został zaktualizowany.", Severity.Success);
+            Make = ((VehicleDetails)vehicle).Make,
+            Model = ((VehicleDetails)vehicle).Model,
+            LicensePlate = ((VehicleDetails)vehicle).LicensePlate,
+            ServiceDue = ((VehicleDetails)vehicle).ServiceDue,
+            LeaseEnd = ((VehicleDetails)vehicle).LeaseEnd
+        };
     }
 
-    private void ShowDetails(CarDetails car)
+    private void ResetItemToOriginalValues(object vehicle)
     {
-        selectedCar = car;
+        ((VehicleDetails)vehicle).Make = vehicleBeforeEdit.Make;
+        ((VehicleDetails)vehicle).Model = vehicleBeforeEdit.Model;
+        ((VehicleDetails)vehicle).LicensePlate = vehicleBeforeEdit.LicensePlate;
+        ((VehicleDetails)vehicle).ServiceDue = vehicleBeforeEdit.ServiceDue;
+        ((VehicleDetails)vehicle).LeaseEnd = vehicleBeforeEdit.LeaseEnd;
+    }
+
+    private void ItemHasBeenCommitted(object vehicle)
+    {
+        Snackbar.Add($"Pojazd {((VehicleDetails)vehicle).Make} {((VehicleDetails)vehicle).Model} został zaktualizowany.", Severity.Success);
+    }
+
+    private void ShowDetails(VehicleDetails vehicle)
+    {
+        selectedVehicle = vehicle;
         isDetailsDialogOpen = true;
     }
 
-    private bool FilterFunc(CarDetails car)
+    private bool FilterFunc(VehicleDetails vehicle)
     {
         if (string.IsNullOrWhiteSpace(searchString))
             return true;
-        return car.Model?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
-               car.RegistrationNumber?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
-               car.VIN?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true;
+        return vehicle.Make?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
+               vehicle.Model?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
+               vehicle.LicensePlate?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    private CarDetails carBeforeEdit;
-    private CarDetails selectedCar;
-    private bool isDetailsDialogOpen = false;
-
-    public class CarDetails
+    public class VehicleDetails
     {
+        public string Make { get; set; }
         public string Model { get; set; }
-        public string RegistrationNumber { get; set; }
-        public string VIN { get; set; }
-        public DateTime? TechnicalInspectionDue { get; set; }
-        public DateTime? InsuranceDue { get; set; }
-        public decimal MonthlyFee { get; set; }
+        public string LicensePlate { get; set; }
+        public DateTime? ServiceDue { get; set; }
+        public DateTime? LeaseEnd { get; set; }
     }
 }

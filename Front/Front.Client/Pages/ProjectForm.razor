@@ -1,17 +1,75 @@
 ﻿@page "/formularz-projektowy"
 
-<MudText Typo="Typo.h6">MudBlazor is @Text</MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ButtonOnClick">@ButtonText</MudButton>
 
-    @code {
-    public string Text { get; set; } = "????";
-    public string ButtonText { get; set; } = "Click Me";
-    public int ButtonClicked { get; set; }
+<MudContainer MaxWidth="MaxWidth.Small">
+<EditForm Model="projectModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
 
-    void ButtonOnClick()
+    <MudCard>
+        <MudCardContent>
+            <MudTextField @bind-Value="projectModel.Name" Label="Project Name" Required="true" />
+            <MudTextField @bind-Value="projectModel.Office_Address" Label="Office Address" Required="true" />
+            <MudTextField @bind-Value="projectModel.Project_NIP" Label="Project NIP" Required="true" />
+        </MudCardContent>
+    </MudCard>
+
+    <MudDivider />
+
+    <MudCard>
+        <MudCardContent>
+            <MudTextField @bind-Value="contactPersonModel.First_Name" Label="First Name" />
+            <MudTextField @bind-Value="contactPersonModel.Last_Name" Label="Last Name" />
+            <MudTextField @bind-Value="contactPersonModel.Phone" Label="Phone" />
+            <MudTextField @bind-Value="contactPersonModel.Position" Label="Position" />
+        </MudCardContent>
+    </MudCard>
+
+    <MudDivider />
+    <MudItem>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary">Anuluj </MudButton>
+        <MudDivider />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitProject">Dodaj Projekt</MudButton>
+    </MudItem>
+
+</EditForm>
+</MudContainer>
+
+@code {
+    private ProjectModel projectModel = new ProjectModel();
+    private ContactPersonModel contactPersonModel = new ContactPersonModel();
+
+    private async Task HandleValidSubmit()
     {
-        ButtonClicked += 1;
-        Text = $"Awesome x {ButtonClicked}";
-        ButtonText = "Click Me Again";
+        if (!string.IsNullOrEmpty(projectModel.Name) &&
+            !string.IsNullOrEmpty(projectModel.Office_Address) &&
+            !string.IsNullOrEmpty(projectModel.Project_NIP))
+        {
+            // Add logic to save Project and Contact Person
+        }
+        else
+        {
+            // Show error or validation message
+        }
+    }
+
+    private async Task SubmitProject()
+    {
+        await HandleValidSubmit();
+    }
+
+    public class ProjectModel
+    {
+        public string Name { get; set; }
+        public string Office_Address { get; set; }
+        public string Project_NIP { get; set; }
+    }
+
+    public class ContactPersonModel
+    {
+        public string First_Name { get; set; }
+        public string Last_Name { get; set; }
+        public string Phone { get; set; }
+        public string Position { get; set; }
     }
 }

@@ -1,0 +1,19 @@
+@page "/formularz-samochodowy"
+@inject IDialogService DialogService
+@using MudBlazor.Components
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5">Formularz Samochodowy</MudText>
+            <MudForm @ref="form" OnValidSubmit="HandleValidSubmit">
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code{
+    
+    private MudForm form;
+
+}
