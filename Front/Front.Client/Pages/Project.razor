@@ -1,7 +1,11 @@
 ﻿@page "/projekty"
 @using System.Net.Http.Json
 @using MudBlazor
+@using System.Text.Json.Serialization
 @inject ISnackbar Snackbar
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
@@ -23,159 +27,95 @@
             <col />
             <col />
             <col />
+            <col />
             <col style="width:50px;" />
         </ColGroup>
         <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.Id)">ID</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.Name)">Nazwa</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.HeadquartersAddress)">Adres</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.TaxId)">NIP</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.EmployeeCount)">Ilość Pracowników</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.AccommodationSlots)">Wolne Miejsca</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.CarCount)">Ilość Samochodów</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.OfficeAddress)">Adres</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.ProjectNIP)">NIP</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.EmployeeAmount)">Ilość Pracowników</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.FreePlaces)">Wolne Miejsca</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.AmountCars)">Ilość Samochodów</MudTableSortLabel></MudTh>
             <MudTh>Akcje</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Nazwa">@context.Name</MudTd>
-            <MudTd DataLabel="Adres">@context.HeadquartersAddress</MudTd>
-            <MudTd DataLabel="NIP">@context.TaxId</MudTd>
-            <MudTd DataLabel="Ilość Pracowników">@context.EmployeeCount</MudTd>
-            <MudTd DataLabel="Wolne Miejsca">@context.AccommodationSlots</MudTd>
-            <MudTd DataLabel="Ilość Samochodów">@context.CarCount</MudTd>
-            <MudTd DataLabel="Akcje">
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
-                    Szczegóły
-                </MudButton>
-            </MudTd>
-        </RowTemplate>
-        <RowEditingTemplate>
-            <MudTd DataLabel="Nazwa">
-                <MudTextField @bind-Value="context.Name" Required />
-            </MudTd>
-            <MudTd DataLabel="Adres">
-                <MudTextField @bind-Value="context.HeadquartersAddress" Required />
-            </MudTd>
-            <MudTd DataLabel="NIP">
-                <MudTextField @bind-Value="context.TaxId" Required />
-            </MudTd>
-            <MudTd DataLabel="Ilość Pracowników">
-                <MudNumericField @bind-Value="context.EmployeeCount" Required Min="0" />
-            </MudTd>
-            <MudTd DataLabel="Wolne Miejsca">
-                <MudNumericField @bind-Value="context.AccommodationSlots" Required Min="0" />
-            </MudTd>
-            <MudTd DataLabel="Ilość Samochodów">
-                <MudNumericField @bind-Value="context.CarCount" Required Min="0" />
-            </MudTd>
-        </RowEditingTemplate>
-        <PagerContent>
-            <MudTablePager />
-        </PagerContent>
-        <EditButtonContent Context="button">
-            <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
-        </EditButtonContent>
-    </MudTable>
-
-    <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-projektowy">Dodaj Projekt</MudButton>
-    </div>
-</MudContainer>
-
-<MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
-    <DialogContent>
-        <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Projektu</MudText>
-         <MudTable Items="@ProjectList" T="ProjectDetails" Hover="true" Dense="false" ReadOnly="false"
-                   CanCancelEdit="true" EditTrigger="TableEditTrigger.EditButton"
-                   EditButtonPosition="TableEditButtonPosition.End"
-                   ApplyButtonPosition="TableApplyButtonPosition.End"
-                   RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
-                   RowEditCommit="ItemHasBeenCommitted"
-                   Filter="new Func<ProjectDetails,bool>(FilterFunc)">
-             <Row>
-                <MudTd><strong>Nazwa:</strong></MudTd>
-                <MudTd>@selectedProject?.Name</MudTd>
-            </Row>
-            <Row>
-                <MudTd><strong>Adres:</strong></MudTd>
-                <MudTd>@selectedProject?.HeadquartersAddress</MudTd>
-            </Row>
-            <Row>
-                <MudTd><strong>NIP:</strong></MudTd>
-                <MudTd>@selectedProject?.TaxId</MudTd>
-            </Row>
-            <Row>
-                <MudTd><strong>Ilość Pracowników:</strong></MudTd>
-                <MudTd>@selectedProject?.EmployeeCount</MudTd>
-            </Row>
-            <Row>
-                <MudTd><strong>Wolne Miejsca:</strong></MudTd>
-                <MudTd>@selectedProject?.AccommodationSlots</MudTd>
-            </Row>
-            <Row>
-                <MudTd><strong>Ilość Samochodów:</strong></MudTd>
-                <MudTd>@selectedProject?.CarCount</MudTd>
-            </Row>
+            <MudTd DataLabel="ID">@context.Id</MudTd>
+                <MudTd DataLabel="Nazwa">@context.Name</MudTd>
+                <MudTd DataLabel="Adres">@context.OfficeAddress</MudTd>
+                <MudTd DataLabel="NIP">@context.ProjectNIP</MudTd>
+                <MudTd DataLabel="Ilość Pracowników">@context.EmployeeAmount</MudTd>
+                <MudTd DataLabel="Wolne Miejsca">@context.FreePlaces</MudTd>
+                <MudTd DataLabel="Ilość Samochodów">@context.AmountCars</MudTd>
+                <MudTd DataLabel="Akcje">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Href="@($"/projekt/szczegoly/{context.Id}")">
+                        Szczegóły
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
         </MudTable>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
-            Zamknij
-        </MudButton>
-    </DialogActions>
-</MudDialog>
 
-@code {
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-projektowy">Dodaj Projekt</MudButton>
+        </div>
+    </MudContainer>
+
+    @code {
     private string searchString = string.Empty;
-    private List<ProjectDetails> ProjectList = new List<ProjectDetails>
-    {
-        new ProjectDetails
-        {
-            Name = "Projekt 1",
-            HeadquartersAddress = "Warszawa, ul. Przykładowa 1",
-            TaxId = "123-456-78-90",
-            EmployeeCount = 10,
-            AccommodationSlots = 5,
-            CarCount = 2
-        },
-        new ProjectDetails
-        {
-            Name = "Projekt 2",
-            HeadquartersAddress = "Krzaków, ul. Przykładowa 1",
-            TaxId = "444-456-78-90",
-            EmployeeCount = 25,
-            AccommodationSlots = 6,
-            CarCount = 7
-        }
-    };
+    private List<ProjectDetails> ProjectList = new List<ProjectDetails>();
     private ProjectDetails projectBeforeEdit;
     private ProjectDetails selectedProject;
     private bool isDetailsDialogOpen = false;
 
-    private void AddProject()
+    protected override async Task OnInitializedAsync()
     {
-         
+        try
+        {
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var projects = await Http.GetFromJsonAsync<List<ProjectDetails>>("projects");
+            if (projects != null)
+            {
+                ProjectList = projects;
+            }
+            else
+            {
+                Snackbar.Add("Brak danych projektów do wyświetlenia.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas pobierania danych projektów: {ex.Message}", Severity.Error);
+        }
     }
 
     private void BackupItem(object project)
     {
         projectBeforeEdit = new ProjectDetails
-        {
-            Name = ((ProjectDetails)project).Name,
-            HeadquartersAddress = ((ProjectDetails)project).HeadquartersAddress,
-            TaxId = ((ProjectDetails)project).TaxId,
-            EmployeeCount = ((ProjectDetails)project).EmployeeCount,
-            AccommodationSlots = ((ProjectDetails)project).AccommodationSlots,
-            CarCount = ((ProjectDetails)project).CarCount
-        };
+            {
+                Id = ((ProjectDetails)project).Id,
+                Name = ((ProjectDetails)project).Name,
+                OfficeAddress = ((ProjectDetails)project).OfficeAddress,
+                ProjectNIP = ((ProjectDetails)project).ProjectNIP,
+                EmployeeAmount = ((ProjectDetails)project).EmployeeAmount,
+                FreePlaces = ((ProjectDetails)project).FreePlaces,
+                AmountCars = ((ProjectDetails)project).AmountCars
+            };
     }
 
     private void ResetItemToOriginalValues(object project)
     {
+        ((ProjectDetails)project).Id = projectBeforeEdit.Id;
         ((ProjectDetails)project).Name = projectBeforeEdit.Name;
-        ((ProjectDetails)project).HeadquartersAddress = projectBeforeEdit.HeadquartersAddress;
-        ((ProjectDetails)project).TaxId = projectBeforeEdit.TaxId;
-        ((ProjectDetails)project).EmployeeCount = projectBeforeEdit.EmployeeCount;
-        ((ProjectDetails)project).AccommodationSlots = projectBeforeEdit.AccommodationSlots;
-        ((ProjectDetails)project).CarCount = projectBeforeEdit.CarCount;
+        ((ProjectDetails)project).OfficeAddress = projectBeforeEdit.OfficeAddress;
+        ((ProjectDetails)project).ProjectNIP = projectBeforeEdit.ProjectNIP;
+        ((ProjectDetails)project).EmployeeAmount = projectBeforeEdit.EmployeeAmount;
+        ((ProjectDetails)project).FreePlaces = projectBeforeEdit.FreePlaces;
+        ((ProjectDetails)project).AmountCars = projectBeforeEdit.AmountCars;
     }
 
     private void ItemHasBeenCommitted(object project)
@@ -187,9 +127,10 @@
     {
         if (string.IsNullOrWhiteSpace(searchString))
             return true;
-        return project.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
-               project.HeadquartersAddress.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
-               project.TaxId.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+        return project.Id.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               project.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               project.OfficeAddress.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               project.ProjectNIP.Contains(searchString, StringComparison.OrdinalIgnoreCase);
     }
 
     private void ShowDetails(ProjectDetails project)
@@ -200,11 +141,19 @@
 
     public class ProjectDetails
     {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
         public string Name { get; set; }
-        public string HeadquartersAddress { get; set; }
-        public string TaxId { get; set; }
-        public int EmployeeCount { get; set; }
-        public int AccommodationSlots { get; set; }
-        public int CarCount { get; set; }
+        [JsonPropertyName("office_address")]
+        public string OfficeAddress { get; set; }
+        [JsonPropertyName("project_nip")]
+        public string ProjectNIP { get; set; }
+        [JsonPropertyName("employee_amount")]
+        public int EmployeeAmount { get; set; }
+        [JsonPropertyName("free_places")]
+        public int FreePlaces { get; set; }
+        [JsonPropertyName("amount_cars")]
+        public int AmountCars { get; set; }
     }
 }

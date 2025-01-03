@@ -1,21 +1,44 @@
-﻿@page "/samochod/szczegoly/{id}"
+﻿@page "/samochod/szczegoly/{id:int}"
+@using System.Text.Json.Serialization
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
     <MudText Typo="Typo.h5" Class="mb-3">Szczegóły Pojazdu</MudText>
-    @if (vehicle != null)
-    {
-        <MudText><strong>Numer Rejestracyjny:</strong> @vehicle.RegistrationNumber</MudText>
-        <MudText><strong>Marka:</strong> @vehicle.Make</MudText>
-        <MudText><strong>Model:</strong> @vehicle.Model</MudText>
-        <MudText><strong>Serwis Do:</strong> @vehicle.InspectionTo?.ToString("dd-MM-yyyy")</MudText>
-        <MudText><strong>Koniec Ubezpieczenia:</strong> @vehicle.InsuranceTo?.ToString("dd-MM-yyyy")</MudText>
-    }
-    else if (isLoading)
+    @if (isLoading)
     {
         <MudProgressLinear Indeterminate="true" />
+    }
+    else if (vehicle != null)
+    {
+        <MudForm @ref="editForm" Class="mb-3">
+            <MudTextField @bind-Value="vehicle.Model" Label="Model" Required="true" />
+            <MudTextField @bind-Value="vehicle.Color" Label="Kolor" />
+            <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Required="true" />
+            <MudTextField @bind-Value="vehicle.Vin" Label="VIN" />
+            <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Serwis od" />
+            <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Serwis do" />
+            <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" />
+            <MudDatePicker @bind-Date="vehicle.InsuranceTo" Label="Ubezpieczenie do" />
+            <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" />
+            <MudSelect @bind-Value="projects.Id" Label="Nazwa Projektu" Required="true">
+                @foreach (var project in projectId)
+                {
+                    <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+        <div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges" Disabled="@isSubmitting">
+                Zapisz zmiany
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteVehicle" Disabled="@isSubmitting">
+                Usuń Samochód
+            </MudButton>
+        </div>
     }
     else
     {
@@ -34,13 +57,52 @@
     public int id { get; set; }
 
     private VehicleDetails vehicle;
+    private ProjectIds projects;
+    private List<ProjectIds> projectId = new List<ProjectIds>();
     private bool isLoading = true;
+    private bool isSubmitting = false;
+    private MudForm editForm;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+
             vehicle = await Http.GetFromJsonAsync<VehicleDetails>($"car/{id}");
+            if (vehicle == null)
+            {
+                Snackbar.Add($"Nie znaleziono pojazdu o ID {id}.", Severity.Warning);
+            }
+
+            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("projects");
+            if (projects != null)
+            {
+                projectId = projects.Select(veh => new ProjectIds
+                    {
+                        Id = veh.Id,
+                        Name = veh.Name
+                    }).ToList();
+            }
+            else
+            {
+                Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+            }
+
+
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Snackbar.Add($"Pojazd o ID {id} nie istnieje.", Severity.Error);
         }
         catch (Exception ex)
         {
@@ -52,6 +114,97 @@
         }
     }
 
+    public class ProjectIds
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+    }
+
+    private async Task SaveChanges()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            await editForm.Validate();
+            if (editForm.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PutAsJsonAsync($"car/{id}", vehicle);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteVehicle()
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć ten pojazd?");
+        if (!confirm) return;
+
+        isSubmitting = true;
+
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Http.DeleteAsync($"car/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Samochód został usunięty.", Severity.Success);
+                NavigateBack();
+            }
+            else
+            {
+                Snackbar.Add("Nie udało się usunąć pojazdu.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas usuwania pojazdu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
     private void NavigateBack()
     {
         Navigation.NavigateTo("/samochody");
@@ -59,10 +212,23 @@
 
     public class VehicleDetails
     {
-        public string Make { get; set; }
+        public int Id { get; set; }
         public string Model { get; set; }
+        public string Color { get; set; }
+        [JsonPropertyName("registration_number")]
         public string RegistrationNumber { get; set; }
+        public string Vin { get; set; }
+        [JsonPropertyName("inspection_from")]
+        public DateTime? InspectionFrom { get; set; }
+        [JsonPropertyName("inspection_to")]
         public DateTime? InspectionTo { get; set; }
+        [JsonPropertyName("insurance_from")]
+        public DateTime? InsuranceFrom { get; set; }
+        [JsonPropertyName("insurance_to")]
         public DateTime? InsuranceTo { get; set; }
+        [JsonPropertyName("fleet_card_number")]
+        public string FleetCardNumber { get; set; }
+        [JsonPropertyName("project_name")]
+        public string ProjectName { get; set; }
     }
 }

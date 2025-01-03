@@ -1,0 +1,129 @@
+﻿@page "/projekt/szczegoly/{id:int}"
+@using System.Text.Json.Serialization
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-3">Szczegóły Projektu</MudText>
+    @if (isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (project != null)
+    {
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6">Informacje o projekcie</MudText>
+            <MudText><strong>Nazwa:</strong> @project.Name</MudText>
+                <MudText><strong>Adres:</strong> @project.OfficeAddress</MudText>
+                <MudText><strong>NIP:</strong> @project.ProjectNIP</MudText>
+            </MudPaper>
+
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6">Osoby Kontaktowe</MudText>
+            <MudTable Items="@project.ContactPersons" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Imię</MudTh>
+                    <MudTh>Nazwisko</MudTh>
+                    <MudTh>Telefon</MudTh>
+                    <MudTh>Stanowisko</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.FirstName</MudTd>
+                        <MudTd>@context.LastName</MudTd>
+                        <MudTd>@context.Phone</MudTd>
+                        <MudTd>@context.Position</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+    }
+    else
+    {
+        <MudText Color="Color.Error">Nie udało się załadować szczegółów projektu.</MudText>
+    }
+
+    <div style="margin-top: 1rem;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+            Powrót
+        </MudButton>
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private ProjectDetails project;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            project = await Http.GetFromJsonAsync<ProjectDetails>($"project/{id}");
+            if (project == null)
+            {
+                Snackbar.Add($"Projekt o ID {id} nie istnieje.", Severity.Warning);
+            }
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Snackbar.Add($"Projekt o ID {id} nie istnieje.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania szczegółów projektu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/projekty");
+    }
+
+    public class ProjectDetails
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        [JsonPropertyName("office_address")]
+        public string OfficeAddress { get; set; }
+        [JsonPropertyName("project_nip")]
+        public string ProjectNIP { get; set; }
+        [JsonPropertyName("contact_persons")]
+        public List<ContactPerson> ContactPersons { get; set; }
+    }
+
+    public class ContactPerson
+    {
+        [JsonPropertyName("id_contact")]
+        public int IdContact { get; set; }
+        [JsonPropertyName("id_project")]
+        public int IdProject { get; set; }
+        [JsonPropertyName("first_name")]
+        public string FirstName { get; set; }
+        [JsonPropertyName("last_name")]
+        public string LastName { get; set; }
+        [JsonPropertyName("phone")]
+        public string Phone { get; set; }
+        [JsonPropertyName("position")]
+        public string Position { get; set; }
+    }
+}
