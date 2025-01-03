@@ -1,0 +1,68 @@
+﻿@page "/samochod/szczegoly/{id}"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-3">Szczegóły Pojazdu</MudText>
+    @if (vehicle != null)
+    {
+        <MudText><strong>Numer Rejestracyjny:</strong> @vehicle.RegistrationNumber</MudText>
+        <MudText><strong>Marka:</strong> @vehicle.Make</MudText>
+        <MudText><strong>Model:</strong> @vehicle.Model</MudText>
+        <MudText><strong>Serwis Do:</strong> @vehicle.InspectionTo?.ToString("dd-MM-yyyy")</MudText>
+        <MudText><strong>Koniec Ubezpieczenia:</strong> @vehicle.InsuranceTo?.ToString("dd-MM-yyyy")</MudText>
+    }
+    else if (isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else
+    {
+        <MudText Color="Color.Error">Nie udało się załadować szczegółów pojazdu.</MudText>
+    }
+
+    <div style="margin-top: 1rem;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+            Powrót
+        </MudButton>
+    </div>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private VehicleDetails vehicle;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            vehicle = await Http.GetFromJsonAsync<VehicleDetails>($"car/{id}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania szczegółów pojazdu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/samochody");
+    }
+
+    public class VehicleDetails
+    {
+        public string Make { get; set; }
+        public string Model { get; set; }
+        public string RegistrationNumber { get; set; }
+        public DateTime? InspectionTo { get; set; }
+        public DateTime? InsuranceTo { get; set; }
+    }
+}

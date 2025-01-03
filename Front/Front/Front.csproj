@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Front.Client\Front.Client.csproj" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.*" />
     <PackageReference Include="MudBlazor" Version="7.15.0" />
   </ItemGroup>

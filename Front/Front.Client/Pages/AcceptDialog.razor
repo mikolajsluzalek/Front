@@ -1,13 +1,13 @@
 ﻿<MudDialog>
     <TitleContent>
-        Anuluj
+        Dodaj
     </TitleContent>
     <DialogContent>
-        Czy na pewno chcesz opuścić formularz?
+        Czy na pewno chcesz zakończyć formularz??
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Pozostań</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Opuść</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Zatwierdź</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -15,13 +15,9 @@
     [CascadingParameter]
     private MudDialogInstance MudDialog { get; set; }
 
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; }
     private async Task Submit()
     {
         MudDialog.Close(DialogResult.Ok(true));
-        await JSRuntime.InvokeVoidAsync("history.back");
     }
 
 

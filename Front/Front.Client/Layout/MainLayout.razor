@@ -11,10 +11,7 @@
     <MudAppBar Style="background-color: #41357d">
         <MudImage Fluid="true" Src="images/Logo.png" Height="40" Width="40" Alt="Logo Firmy" Elevation="0" Style="background-color: #41357d;" />
         <MudSpacer/>
-        @if (ShouldShowNavMenu())
-        {
-            <NavMenu />
-        }else
+        @if (!ShouldShowNavMenu())
         {
             <UserMenu />
         }
@@ -33,13 +30,6 @@
         var currentUri = NavigationManager.Uri; 
         var relativeUri = NavigationManager.ToBaseRelativePath(currentUri);
 
-        return relativeUri == "" || relativeUri == "Onas" || relativeUri == "Kontakt" || relativeUri == "Login";
-    }
-
-    private bool _open = false;
-
-    private void DrawerOpen()
-    {
-        _open = !_open;
+        return relativeUri == "" || relativeUri == "Login";
     }
 }

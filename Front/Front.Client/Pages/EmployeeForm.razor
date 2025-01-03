@@ -1,7 +1,6 @@
 ﻿@page "/formularz-pracowniczy"
 @inject IDialogService DialogService
 @using MudBlazor.Components
-@using MudBlazor
 
 <MudContainer MaxWidth="MaxWidth.Medium">
 <MudCard>
@@ -36,7 +35,8 @@
                  </MudItem>
              </MudGrid>
 
-             <!-- Karta Profilu -->
+
+
              <MudText Typo="Typo.h6" Class="mt-4">Karta Profilu</MudText>
              <MudGrid>
                  <MudItem xs="12" md="6">
@@ -85,13 +85,12 @@
                  </MudItem>
              </MudGrid>
 
-             <!-- Przyciski -->
              <MudCardActions>
-                 <MudSpacer />
-                 <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary">Zapisz</MudButton>
                      <MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
                          Anuluj
                      </MudButton>
+                 <MudSpacer />
+                 <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary">Zapisz</MudButton>
                  </MudCardActions>
          </MudForm>
      </MudCardContent>

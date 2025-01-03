@@ -1,54 +1,68 @@
 ﻿@page "/panel-glowny"
 @using System.Net.Http.Json
+@using System.Text.Json.Serialization
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject IJSRuntime JSRuntime
-
+@inject HttpClient Http
 
 <MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
     <MudGrid>
         <MudSpacer/>
         <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px;">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 480px;">
                 <MudText Typo="Typo.h6" Align="Align.Center">Ilość pracowników</MudText>
-                <MudChart ChartType="ChartType.Donut" LegendPosition="Position.Bottom" Width="400px" Height="300px"
+                <MudChart ChartType="ChartType.Donut" LegendPosition="Position.Bottom" Width="400px" Height="380px"
                           InputData="@data" InputLabels="@labels">
                 </MudChart>
             </MudPaper>
         </MudItem>
         <MudSpacer />
         <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 480px">
                 <MudText Typo="Typo.h6" Align="Align.Center">Zapełnienie kwater</MudText>
                 <div>
-                    <MudChart ChartType="ChartType.StackedBar" ChartSeries="@Series" LegendPosition="Position.Bottom" XAxisLabels="@XAxisLabels" Width="100%" Height="300px"></MudChart>
+                    <style>
+                        .mud-charts-xaxis text {
+                            writing-mode: vertical-rl;
+                            transform: translateY(25px);
+                        }
+
+                        .mud-chart-line {
+                            overflow: visible;
+                        }
+                    </style>
+                    <MudChart ChartType="ChartType.StackedBar" ChartSeries="@Series" LegendPosition="Position.Top" XAxisLabels="@XAxisLabels" Width="100%" Height="300px" Class="mud-chart-x-axis"></MudChart>
                 </div>
             </MudPaper>
         </MudItem>
         <MudSpacer />
         <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 420px">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 480px">
                 <MudText Typo="Typo.h6" Align="Align.Center">Zbliżające się przeglądy</MudText>
                 <MudTimeline Modifiers="true">
-                    <MudTimelineItem Color="Color.Error">
-                        <MudText Typo="Typo.button">SC125CK</MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">17.12.2024 12:30</MudText>
-                    </MudTimelineItem>
-                    <MudTimelineItem Color="Color.Warning" TimelineAlign="TimelineAlign.End">
-                        <MudText Typo="Typo.body2">SC799AC</MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">27.12.2024 14:40</MudText>
-                    </MudTimelineItem>
-                    <MudTimelineItem Color="Color.Warning" TimelineAlign="TimelineAlign.End">
-                        <MudText Typo="Typo.body2">SC546AP</MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">02.01.2025 10:00</MudText>
-                    </MudTimelineItem>
-                    <MudTimelineItem Color="Color.Warning" TimelineAlign=" TimelineAlign.End">
-                        <MudText Typo="Typo.button">WE771AC</MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">12.01.2025 9:30</MudText>
-                    </MudTimelineItem>
-                    <MudTimelineItem Color="Color.Info">
-                        <MudText Typo="Typo.button">WE271BD</MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary">12.02.2025 15:00</MudText>
-                    </MudTimelineItem>
+                    @if (carInspectionTimelineItems != null)
+                    {
+                        @foreach (var inspection in carInspectionTimelineItems)
+                        {
+                            var daysUntilInspection = (inspection.Date - DateTime.UtcNow).TotalDays;
+
+                            <MudTimelineItem Color="@(daysUntilInspection < 7 ? Color.Error : (daysUntilInspection < 21 ? Color.Warning : Color.Info))" TimelineAlign="TimelineAlign.End">
+                                <MudText Typo="Typo.button">@inspection.RegistrationNumber</MudText>
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                        @inspection.Date.ToString("dd.MM.yyyy")
+                                </MudText>
+                            </MudTimelineItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Align="Align.Center">Brak danych o przeglądach</MudText>
+                    }
                 </MudTimeline>
+
+
+
+
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -58,10 +72,10 @@
     <MudGrid>
         <MudSpacer/>
         <MudItem xs="4" sm="8">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 400px;">
+            <MudPaper Elevation="2" Class="pa-4">
                 <MudTable Items="@Elements" Dense="true" Hover="false" Striped="true" Filter="new Func<Element,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Periodic Elements</MudText>
+                        <MudText Typo="Typo.h6">Zbliżające się dokumenty</MudText>
                         <MudSpacer />
                         <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
                     </ToolBarContent>
@@ -89,19 +103,16 @@
 </MudContainer>
 
 
-@code {
+    @code {
     // Donut Chart
-    public double[] data = { 47, 99, 17, 5 };
-    public string[] labels = { "Polo Market", "Elektrolux", "Wulkan SA.", "Huta" };
+    public double[] data;
+    public string[] labels;
 
 
     // Stacked Chart
-    public List<ChartSeries> Series = new List<ChartSeries>()
-    {
-        new ChartSeries() { Name = "Zajęte", Data = new double[] { 49, 74, 8, 14, 7} },
-        new ChartSeries() { Name = "Wolne", Data = new double[] { 12, 16, 48, 0, 7 } },
-    };
-    public string[] XAxisLabels = { "ul. Tczewska 7", "ul. Fabryczna 11", "ul. Kazimierza 44", "ul. Pułaska 2/3", "ul. Górna 13/37"};
+    private List<ChartSeries> Series = new List<ChartSeries>();
+    private string[] XAxisLabels = Array.Empty<string>();
+
 
     // Table
     private string searchString1 = "";
@@ -110,12 +121,147 @@
 
     private IEnumerable<Element> Elements = new List<Element>();
 
-    /*protected override async Task OnInitializedAsync()
+    private DashboardData dashboardData;
+
+    // Cars
+    private List<CarInspection> carInspectionTimelineItems;
+
+
+    protected override async Task OnInitializedAsync()
     {
-        var json = await JSRuntime.InvokeAsync<string>("fetch", new object[] { "Dane_Dokumentow.json" });
-        Elements = System.Text.Json.JsonSerializer.Deserialize<List<Element>>(json);
+        try
+        {
+            // Pobranie tokena z localStorage
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                // Ustawienie nagłówka Authorization
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                // Pobranie danych z API
+                var dashboardData = await Http.GetFromJsonAsync<DashboardData>("dashboard");
+
+                if (dashboardData != null && dashboardData.Accommodations != null)
+                {
+                    // Ustawienie danych wykresu
+                    XAxisLabels = dashboardData.Accommodations.Select(a => a.Name).ToArray();
+                    Series = new List<ChartSeries>
+                {
+                    new ChartSeries { Name = "Zajęte", Data = dashboardData.Accommodations.Select(a => (double)a.Taken).ToArray() },
+                    new ChartSeries { Name = "Wolne", Data = dashboardData.Accommodations.Select(a => (double)a.Free).ToArray() }
+                };
+
+                }
+                else
+                {
+                    Console.WriteLine("Nieprawidłowe dane z API: Accommodations jest null.");
+                }
+
+                if( dashboardData.EmployeesProject != null)
+                {
+                    data = dashboardData.EmployeesProject.Select(p => (double)p.Count).ToArray();
+                    labels = dashboardData.EmployeesProject.Select(p => p.Name).ToArray();
+
+                }
+                else
+                {
+                    Console.WriteLine("Nieprawidłowe dane z API: EmployeesProject jest null.");
+                }
+                if( dashboardData.CarInspections != null)
+                {
+                    carInspectionTimelineItems = dashboardData.CarInspections;
+                }
+                else
+                {
+                    Console.WriteLine("Nieprawidłowe dane z API: CarInspections jest null.");
+                }
+                if (dashboardData != null && dashboardData.EmployeePermits != null)
+                {
+                    Elements = dashboardData.EmployeePermits.Select(doc => new Element
+                        {
+                            Imie = doc.FirstName,
+                            Nazwisko = doc.LastName,
+                            TypDokumentu = doc.Document,
+                            Data = doc.Date.ToString("dd.MM.yyyy")
+                        }).ToList();
+                }
+                else
+                {
+                    Console.WriteLine("Nieprawidłowe dane z API: EmployeePermits jest null.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Token JWT nie został znaleziony.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Błąd podczas pobierania danych: {ex.Message}");
+        }
     }
-    */
+
+    
+    // Data Models
+    public class DashboardData
+    {
+        [JsonPropertyName("employees_project")]
+        public List<Project> EmployeesProject { get; set; }
+
+        public List<Accommodation> Accommodations { get; set; }
+
+        [JsonPropertyName("car_inspections")]
+        public List<CarInspection> CarInspections { get; set; }
+
+        [JsonPropertyName("employee_permits")]
+        public List<EmployeePermits> EmployeePermits { get; set; }
+    }
+
+    public class EmployeePermits
+    {
+        [JsonPropertyName("first_name")]
+        public string FirstName { get; set; }
+
+        [JsonPropertyName("last_name")]
+        public string LastName { get; set; }
+
+        public string Document { get; set; }
+
+        public DateTime Date { get; set; }
+    }
+
+
+    public class Project
+    {
+        public string Name { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class Accommodation
+    {
+        public string Name { get; set; }
+        public int Taken { get; set; }
+        public int Free { get; set; }
+    }
+
+    public class CarInspection
+    {
+        [JsonPropertyName("date")]
+        public DateTime Date { get; set; }
+
+        [JsonPropertyName("registration_number")]
+        public string RegistrationNumber { get; set; }
+    }
+
+    public class Element
+    {
+        public string Imie { get; set; }
+        public string Nazwisko { get; set; }
+        public string TypDokumentu { get; set; }
+        public string Data { get; set; }
+    }
+
     private bool FilterFunc1(Element element) => FilterFunc(element, searchString1);
 
     private bool FilterFunc(Element element, string searchString)
@@ -132,13 +278,5 @@
     }
     
 
-    // Define the Element class to match the JSON structure
-    public class Element
-    {
-        public string Imie { get; set; }
-        public string Nazwisko { get; set; }
-        public string TypDokumentu { get; set; }
-        public string Data { get; set; }
-    }
 
 }

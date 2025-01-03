@@ -38,9 +38,7 @@
                 <MudTd DataLabel="Numer Paszportu">@context.PassportNumber</MudTd>
                 <MudTd DataLabel="Data Urodzenia">@context.DateOfBirth.ToString("dd-MM-yyyy")</MudTd>
                 <MudTd DataLabel="Akcje">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
-                        Szczegóły
-                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">Szczegóły</MudButton>
                 </MudTd>
             </RowTemplate>
             <RowEditingTemplate>
@@ -67,24 +65,11 @@
              <MudIconButton Size="Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
          </EditButtonContent>
      </MudTable>
- </MudContainer>
 
- <MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
-     <DialogContent>
-         <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Pracownika</MudText>
-         <MudDivider Class="mb-2" />
-         <MudText><strong>Imię:</strong> @selectedEmployee?.FirstName</MudText>
-            <MudText><strong>Nazwisko:</strong> @selectedEmployee?.LastName</MudText>
-            <MudText><strong>Pesel:</strong> @selectedEmployee?.Pesel</MudText>
-            <MudText><strong>Numer Paszportu:</strong> @selectedEmployee?.PassportNumber</MudText>
-            <MudText><strong>Data Urodzenia:</strong> @selectedEmployee?.DateOfBirth.ToString("dd-MM-yyyy")</MudText>
-        </DialogContent>
-        <DialogActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
-                Zamknij
-            </MudButton>
-        </DialogActions>
-    </MudDialog>
+     <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+         <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-pracowniczy">Dodaj Pracownika</MudButton>
+     </div>
+ </MudContainer>
 
 
     @code {
@@ -114,11 +99,6 @@
     private bool isDetailsDialogOpen = false;
     private bool isDeleteDialogOpen = false;
 
-    private void ShowDetails(EmployeeDetails employee)
-    {
-        selectedEmployee = employee;
-        isDetailsDialogOpen = true;
-    }
 
     private void BackupItem(object employee)
     {

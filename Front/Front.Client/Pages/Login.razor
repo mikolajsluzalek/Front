@@ -1,15 +1,21 @@
 ﻿@page "/login"
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Small" Style="display: flex; justify-content: center; align-items: center; height: 50vh;">
     <MudPaper Style="padding: 2rem; border-radius: 8px;" MaxWidth="400" Width="100%" Elevation="4">
         <MudText Typo="Typo.h4" Align="Align.Center">Logowanie</MudText>
-        <MudForm @ref="form" OnValidSubmit="HandleLogin">
+        <MudForm @ref="form">
             <MudTextField @bind-Value="_login" Label="Login" Required="true" FullWidth="true" />
-            <MudTextField @bind-Value="_password" Label="Hasło" Required="true" FullWidth="true" />
-            <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" OnClick="@(()=>HandleLogin())">
-                Zaloguj
-            </MudButton>
+            <MudTextField @bind-Value="_password" Label="Hasło" InputType="InputType.Password" Required="true" FullWidth="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" OnClick="HandleLogin">Zaloguj</MudButton>
         </MudForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudText Color="Color.Error" Align="Align.Center" Class="mt-2">@errorMessage</MudText>
+        }
     </MudPaper>
 </MudContainer>
 
@@ -17,11 +23,60 @@
     private MudForm form;
     private string _login { get; set; }
     private string _password { get; set; }
+    private string errorMessage;
 
     private async Task HandleLogin()
     {
-        // Logika obsługi logowania
-        await Task.Delay(500); // Symulacja opóźnienia
-        Console.WriteLine($"Login: {_login}, Hasło: {_password}");
+        await form.Validate();
+        Console.WriteLine($"Formularz jest poprawny: {form.IsValid}");
+
+        if (form.IsValid)
+        {
+            errorMessage = string.Empty;
+
+            try
+            {
+                var payload = new
+                {
+                    username = _login,
+                    password = _password
+                };
+
+                Console.WriteLine($"Wysyłany JSON: {System.Text.Json.JsonSerializer.Serialize(payload)}");
+
+                // Wysyłanie żądania POST do "login"
+                var response = await Http.PostAsJsonAsync("login", payload);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                    Console.WriteLine($"Zalogowano! Token: {result.Token}");
+                    await LocalStorage.SetItemAsync("authToken", result.Token);
+                    Console.WriteLine("Token zapisany w LocalStorage.");
+                    Navigation.NavigateTo("/panel-glowny");
+                }
+                else
+                {
+                    errorMessage = $"Błąd logowania: Zły login lub hasło";
+                    Console.WriteLine($"Status odpowiedzi: {response.StatusCode}");
+                    Console.WriteLine($"Treść odpowiedzi: {await response.Content.ReadAsStringAsync()}");
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Wystąpił błąd: {ex.Message}";
+                Console.WriteLine($"Wystąpił błąd: {ex.Message}");
+            }
+        }
+        else
+        {
+            errorMessage = "Formularz zawiera błędy. Sprawdź dane wejściowe.";
+        }
+    }
+
+    private class LoginResponse
+    {
+        public string Token { get; set; }
+        public DateTime Expires { get; set; }
     }
 }

@@ -1,11 +1,16 @@
 ﻿@page "/samochody"
 @using System.Net.Http.Json
-@using MudBlazor
+@using System.Text.Json.Serialization
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
+@inject HttpClient Http
+
+
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
-    <MudTable Items="@VehicleList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
+    <MudTable Items="@VehiclesList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
               EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
               ApplyButtonPosition="TableApplyButtonPosition.End"
               RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted"
@@ -22,76 +27,110 @@
             <col />
             <col />
             <col />
+            <col />
             <col style="width:100px;" />
         </ColGroup>
         <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.Id)">ID</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.Make)">Marka</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.Model)">Model</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.LicensePlate)">Tablica Rejestracyjna</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.ServiceDue)">Serwis Do</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.LeaseEnd)">Koniec Leasingu</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.RegistrationNumber)">Tablica Rejestracyjna</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.InspectionTo)">Serwis Do</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<VehicleDetails, object>(x => x.InsuranceTo)">Koniec Ubezpieczenia</MudTableSortLabel></MudTh>
             <MudTh>Akcje</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Marka">@context.Make</MudTd>
-            <MudTd DataLabel="Model">@context.Model</MudTd>
-            <MudTd DataLabel="Tablica Rejestracyjna">@context.LicensePlate</MudTd>
-            <MudTd DataLabel="Serwis Do">@context.ServiceDue?.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Koniec Leasingu">@context.LeaseEnd?.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Akcje">
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => ShowDetails(context)">
-                    Szczegóły
-                </MudButton>
-            </MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager />
-        </PagerContent>
-    </MudTable>
+            <MudTd DataLabel="ID">@context.Id</MudTd>
+                <MudTd DataLabel="Marka">@context.Make</MudTd>
+                <MudTd DataLabel="Model">@context.Model</MudTd>
+                <MudTd DataLabel="Tablica Rejestracyjna">@context.RegistrationNumber</MudTd>
+                <MudTd DataLabel="Serwis Do">@context.InspectionTo?.ToString("dd-MM-yyyy")</MudTd>
+                <MudTd DataLabel="Koniec Ubezpieczenia">@context.InsuranceTo?.ToString("dd-MM-yyyy")</MudTd>
+                <MudTd DataLabel="Akcje">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Href="@($"/samochod/szczegoly/{context.Id}")">
+                        Szczegóły
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate>
+                <MudTd DataLabel="ID">
+                    <MudTextField @bind-Value="context.Id" Disabled="true" />
+                </MudTd>
+                <MudTd DataLabel="Marka">
+                    <MudTextField @bind-Value="context.Make" Required />
+             </MudTd>
+             <MudTd DataLabel="Model">
+                 <MudTextField @bind-Value="context.Model" Required />
+             </MudTd>
+             <MudTd DataLabel="Tablica Rejestracyjna">
+                 <MudTextField @bind-Value="context.RegistrationNumber" Required />
+             </MudTd>
+             <MudTd DataLabel="Serwis Do">
+                 <MudDatePicker @bind-Date="context.InspectionTo" Required />
+             </MudTd>
+             <MudTd DataLabel="Koniec Ubezpieczenia">
+                 <MudDatePicker @bind-Date="context.InsuranceTo" Required />
+             </MudTd>
+         </RowEditingTemplate>
+         <PagerContent>
+             <MudTablePager />
+         </PagerContent>
+     </MudTable>
+
+
+     <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+         <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-samochodowy">Dodaj Samochód</MudButton>
+     </div>
 </MudContainer>
 
-<MudDialog @bind-IsVisible="isDetailsDialogOpen" MaxWidth="MaxWidth.Medium">
-    <DialogContent>
-        <MudText Typo="Typo.h6" Class="mb-2">Szczegóły Pojazdu</MudText>
-        <MudDivider Class="mb-2" />
-        <MudText><strong>Marka:</strong> @selectedVehicle?.Make</MudText>
-        <MudText><strong>Model:</strong> @selectedVehicle?.Model</MudText>
-        <MudText><strong>Tablica Rejestracyjna:</strong> @selectedVehicle?.LicensePlate</MudText>
-        <MudText><strong>Serwis Do:</strong> @selectedVehicle?.ServiceDue?.ToString("dd-MM-yyyy")</MudText>
-        <MudText><strong>Koniec Leasingu:</strong> @selectedVehicle?.LeaseEnd?.ToString("dd-MM-yyyy")</MudText>
-    </DialogContent>
-    <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => isDetailsDialogOpen = false">
-            Zamknij
-        </MudButton>
-    </DialogActions>
-</MudDialog>
 
-@code {
+    @code {
     private string searchString = string.Empty;
-    private List<VehicleDetails> VehicleList = new List<VehicleDetails>
-    {
-        new VehicleDetails
-        {
-            Make = "Toyota",
-            Model = "RAV4",
-            LicensePlate = "WX67890",
-            ServiceDue = DateTime.Now.AddMonths(5),
-            LeaseEnd = DateTime.Now.AddMonths(12)
-        },
-        new VehicleDetails
-        {
-            Make = "Honda",
-            Model = "Civic",
-            LicensePlate = "KR12345",
-            ServiceDue = DateTime.Now.AddMonths(3),
-            LeaseEnd = DateTime.Now.AddMonths(8)
-        }
-    };
-
+    private List<VehicleDetails> VehiclesList = new List<VehicleDetails>();
     private VehicleDetails vehicleBeforeEdit;
     private VehicleDetails selectedVehicle;
-    private bool isDetailsDialogOpen = false;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var vehicles = await Http.GetFromJsonAsync<List<VehicleDetails>>("cars");
+            if (vehicles != null)
+            {
+                VehiclesList = vehicles.Select(veh => new VehicleDetails
+                    {
+                        Id = veh.Id,
+                        Make = veh.Model.Split(' ')[0],
+                        Model = string.Join(" ", veh.Model.Split(' ').Skip(1)),
+                        RegistrationNumber = veh.RegistrationNumber,
+                        InspectionTo = veh.InspectionTo,
+                        InsuranceTo = veh.InsuranceTo
+                    }).ToList();
+            }
+            else
+            {
+                Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania pojazdów: {ex.Message}", Severity.Error);
+        }
+    }
+
 
     private void BackupItem(object vehicle)
     {
@@ -99,31 +138,30 @@
         {
             Make = ((VehicleDetails)vehicle).Make,
             Model = ((VehicleDetails)vehicle).Model,
-            LicensePlate = ((VehicleDetails)vehicle).LicensePlate,
-            ServiceDue = ((VehicleDetails)vehicle).ServiceDue,
-            LeaseEnd = ((VehicleDetails)vehicle).LeaseEnd
+            RegistrationNumber = ((VehicleDetails)vehicle).RegistrationNumber,
+            InspectionTo = ((VehicleDetails)vehicle).InspectionTo,
+            InsuranceTo = ((VehicleDetails)vehicle).InsuranceTo
         };
     }
+
+
 
     private void ResetItemToOriginalValues(object vehicle)
     {
         ((VehicleDetails)vehicle).Make = vehicleBeforeEdit.Make;
         ((VehicleDetails)vehicle).Model = vehicleBeforeEdit.Model;
-        ((VehicleDetails)vehicle).LicensePlate = vehicleBeforeEdit.LicensePlate;
-        ((VehicleDetails)vehicle).ServiceDue = vehicleBeforeEdit.ServiceDue;
-        ((VehicleDetails)vehicle).LeaseEnd = vehicleBeforeEdit.LeaseEnd;
+        ((VehicleDetails)vehicle).RegistrationNumber = vehicleBeforeEdit.RegistrationNumber;
+        ((VehicleDetails)vehicle).InspectionTo = vehicleBeforeEdit.InspectionTo;
+        ((VehicleDetails)vehicle).InsuranceTo = vehicleBeforeEdit.InsuranceTo;
     }
 
     private void ItemHasBeenCommitted(object vehicle)
     {
+
+
         Snackbar.Add($"Pojazd {((VehicleDetails)vehicle).Make} {((VehicleDetails)vehicle).Model} został zaktualizowany.", Severity.Success);
     }
 
-    private void ShowDetails(VehicleDetails vehicle)
-    {
-        selectedVehicle = vehicle;
-        isDetailsDialogOpen = true;
-    }
 
     private bool FilterFunc(VehicleDetails vehicle)
     {
@@ -131,15 +169,24 @@
             return true;
         return vehicle.Make?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
                vehicle.Model?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true ||
-               vehicle.LicensePlate?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true;
+               vehicle.RegistrationNumber?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true;
     }
 
     public class VehicleDetails
     {
+        public int Id { get; set; } 
+
         public string Make { get; set; }
+        
         public string Model { get; set; }
-        public string LicensePlate { get; set; }
-        public DateTime? ServiceDue { get; set; }
-        public DateTime? LeaseEnd { get; set; }
+
+        [JsonPropertyName("registration_number")]
+        public string RegistrationNumber { get; set; }
+        
+        [JsonPropertyName("inspection_to")]
+        public DateTime? InspectionTo { get; set; }
+        
+        [JsonPropertyName("insurance_to")]
+        public DateTime? InsuranceTo { get; set; }
     }
 }

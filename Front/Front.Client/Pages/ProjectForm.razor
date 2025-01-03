@@ -1,38 +1,43 @@
 ﻿@page "/formularz-projektowy"
+@inject IDialogService DialogService
+@using System.ComponentModel.DataAnnotations;
+@using System.Text.RegularExpressions;
 
 
-<MudContainer MaxWidth="MaxWidth.Small">
-<EditForm Model="projectModel" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<MudContainer MaxWidth="MaxWidth.Small" Style="margin-top: 2rem;">
+    <EditForm Model="projectModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <MudText Align="Align.Center" Typo="Typo.h4">Dodaj projekt</MudText>
 
-    <MudCard>
-        <MudCardContent>
-            <MudTextField @bind-Value="projectModel.Name" Label="Project Name" Required="true" />
-            <MudTextField @bind-Value="projectModel.Office_Address" Label="Office Address" Required="true" />
-            <MudTextField @bind-Value="projectModel.Project_NIP" Label="Project NIP" Required="true" />
-        </MudCardContent>
-    </MudCard>
+        <MudCard>
+            <MudCardContent>
+                <MudTextField @bind-Value="projectModel.Name" Label="Nazwa projektu" Required="true" For="@(() => projectModel.Name)" />
+                <MudTextField @bind-Value="projectModel.Office_Address" Label="Adres" Required="true" For="@(() => projectModel.Office_Address)" />
+                <MudTextField @bind-Value="projectModel.Project_NIP" Label="NIP" Required="true" For="@(() => projectModel.Project_NIP)" />
+            </MudCardContent>
+        </MudCard>
 
-    <MudDivider />
-
-    <MudCard>
-        <MudCardContent>
-            <MudTextField @bind-Value="contactPersonModel.First_Name" Label="First Name" />
-            <MudTextField @bind-Value="contactPersonModel.Last_Name" Label="Last Name" />
-            <MudTextField @bind-Value="contactPersonModel.Phone" Label="Phone" />
-            <MudTextField @bind-Value="contactPersonModel.Position" Label="Position" />
-        </MudCardContent>
-    </MudCard>
-
-    <MudDivider />
-    <MudItem>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary">Anuluj </MudButton>
         <MudDivider />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitProject">Dodaj Projekt</MudButton>
-    </MudItem>
+        <MudText Align="Align.Center" Typo="Typo.h6" Style="margin-top: 1rem; margin-bottom: 1rem;">Dane kontaktowe</MudText>
 
-</EditForm>
+        <MudCard>
+            <MudCardContent>
+                <MudTextField @bind-Value="contactPersonModel.First_Name" Label="Imię" For="@(() => contactPersonModel.First_Name)" />
+                <MudTextField @bind-Value="contactPersonModel.Last_Name" Label="Nazwisko" For="@(() => contactPersonModel.Last_Name)" />
+                <MudTextField @bind-Value="contactPersonModel.Phone" Label="Numer telefonu" For="@(() => contactPersonModel.Phone)" />
+                <MudTextField @bind-Value="contactPersonModel.Position" Label="Stanowisko" For="@(() => contactPersonModel.Position)" />
+            </MudCardContent>
+        </MudCard>
+
+        <MudDivider />
+
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialogAsync">Anuluj </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitProject">Dodaj Projekt</MudButton>
+        </MudCardActions>
+    </EditForm>
 </MudContainer>
 
 @code {
@@ -60,8 +65,14 @@
 
     public class ProjectModel
     {
+        [Required(ErrorMessage = "Nazwa projektu jest wymagana.")]
         public string Name { get; set; }
+
+        [Required(ErrorMessage = "Adres jest wymagany.")]
         public string Office_Address { get; set; }
+
+        [Required(ErrorMessage = "NIP jest wymagany.")]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "NIP musi składać się z 10 cyfr.")]
         public string Project_NIP { get; set; }
     }
 
@@ -69,7 +80,17 @@
     {
         public string First_Name { get; set; }
         public string Last_Name { get; set; }
+
+        [RegularExpression(@"^(\+?\d{2}\s?)?\d{9}$", ErrorMessage = "Numer telefonu musi mieć 9 cyfr lub być w formacie +xx i 9 cyfr.")]
         public string Phone { get; set; }
+
         public string Position { get; set; }
+    }
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DeclineDialog>("Cofnij", options);
     }
 }
