@@ -14,41 +14,51 @@
     }
     else if (project != null)
     {
-        <MudPaper Class="pa-4 mb-4">
-            <MudText Typo="Typo.h6">Informacje o projekcie</MudText>
-            <MudText><strong>Nazwa:</strong> @project.Name</MudText>
-                <MudText><strong>Adres:</strong> @project.OfficeAddress</MudText>
-                <MudText><strong>NIP:</strong> @project.ProjectNIP</MudText>
-            </MudPaper>
-
-        <MudPaper Class="pa-4 mb-4">
-            <MudText Typo="Typo.h6">Osoby Kontaktowe</MudText>
-            <MudTable Items="@project.ContactPersons" Hover="true" Dense="true">
-                <HeaderContent>
-                    <MudTh>Imię</MudTh>
-                    <MudTh>Nazwisko</MudTh>
-                    <MudTh>Telefon</MudTh>
-                    <MudTh>Stanowisko</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.FirstName</MudTd>
-                        <MudTd>@context.LastName</MudTd>
-                        <MudTd>@context.Phone</MudTd>
-                        <MudTd>@context.Position</MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudPaper>
+        <MudForm @ref="editForm" Class="mb-3">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.Name" Label="Nazwa" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.OfficeAddress" Label="Adres" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.ProjectNIP" Label="NIP" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.FirstName" Label="Imię" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.LastName" Label="Nazwisko" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.Phone" Label="Telefon" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="project.Position" Label="Stanowisko" />
+            </MudItem>
+            </MudGrid>
+        </MudForm>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; gap: 1rem;">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges" Disabled="@isSubmitting">
+            Zapisz zmiany
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteProject" Disabled="@isSubmitting">
+            Usuń Projekt
+        </MudButton>
+    </div>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+        Powrót
+    </MudButton>
+</div>
     }
     else
     {
         <MudText Color="Color.Error">Nie udało się załadować szczegółów projektu.</MudText>
     }
 
-    <div style="margin-top: 1rem;">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
-            Powrót
-        </MudButton>
-    </div>
+    
 </MudContainer>
 
 @code {
@@ -57,6 +67,8 @@
 
     private ProjectDetails project;
     private bool isLoading = true;
+    private bool isSubmitting = false;
+    private MudForm editForm;
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,6 +104,90 @@
         }
     }
 
+    private async Task SaveChanges()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            await editForm.Validate();
+            if (editForm.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PostAsJsonAsync($"project/{id}/update", project);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteProject()
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć ten projekt?");
+        if (!confirm) return;
+
+        isSubmitting = true;
+
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Http.DeleteAsync($"project/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Projekt został usunięty.", Severity.Success);
+                NavigateBack();
+            }
+            else
+            {
+                Snackbar.Add("Nie udało się usunąć projektu.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas usuwania projektu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
     private void NavigateBack()
     {
         Navigation.NavigateTo("/projekty");
@@ -107,16 +203,6 @@
         public string OfficeAddress { get; set; }
         [JsonPropertyName("project_nip")]
         public string ProjectNIP { get; set; }
-        [JsonPropertyName("contact_persons")]
-        public List<ContactPerson> ContactPersons { get; set; }
-    }
-
-    public class ContactPerson
-    {
-        [JsonPropertyName("id_contact")]
-        public int IdContact { get; set; }
-        [JsonPropertyName("id_project")]
-        public int IdProject { get; set; }
         [JsonPropertyName("first_name")]
         public string FirstName { get; set; }
         [JsonPropertyName("last_name")]

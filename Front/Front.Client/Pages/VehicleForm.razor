@@ -1,18 +1,295 @@
 @page "/formularz-samochodowy"
 @inject IDialogService DialogService
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 @using MudBlazor.Components
-@using MudBlazor
+@using System.Text.Json.Serialization
 
-<MudContainer MaxWidth="MaxWidth.Small">
+<MudContainer MaxWidth="MaxWidth.Medium">
     <MudCard>
         <MudCardContent>
             <MudText Typo="Typo.h5">Formularz Samochodowy</MudText>
+            <MudForm @ref="form" OnValidSubmit="SaveChanges">
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Samochodu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Model" Label="Model" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="vehicle.Color" Label="Kolor" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="vehicle.Vin" Label="VIN" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przegl¹d od" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Przegl¹d do" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudDatePicker @bind-Date="vehicle.InsuranceTo" Label="Ubezpieczenie do" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudSelect T="int" Label="Projekt" @bind-Value="vehicle.IdProject">
+                             @foreach (var project in projectList)
+                            {
+                                <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Serwisu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Service.ServiceName" Label="Nazwa Serwisu" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Service.Address" Label="Adres Serwisu" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon Serwisu" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Leasingu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Leasing.Amount" Label="Kwota" Type="number" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesiêczna Rata" Type="number" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudNumericField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzieñ P³atnoœci" Min="1" Max="31" />
+                    </MudItem>
+                </MudGrid>
+
+
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialogAsync">
+                        Anuluj
+                    </MudButton>
+                    <MudSpacer />
+                    <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges">
+                        Zapisz
+                    </MudButton>
+                </MudCardActions>
+            </MudForm>
         </MudCardContent>
     </MudCard>
 </MudContainer>
 
-@code{
-    
+@code {
     private MudForm form;
+    private VehicleDetails vehicle = new VehicleDetails
+        {
+            Service = new ServiceDetails(),
+            Leasing = new LeasingDetails()
+        };
+    private bool isLoading = true;
+    private List<ProjectIds> projectList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            projectList = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+            if (projectList == null)
+            {
+                Snackbar.Add($"Brak projektów.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"B³¹d podczas ³adowania projektów: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool isSubmitting;
+
+    private async Task SaveChanges()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            await form.Validate();
+            if (form.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PostAsJsonAsync("/car", new
+                {
+                    vehicle.Model,
+                    vehicle.Color,
+                    vehicle.RegistrationNumber,
+                    vehicle.Vin,
+                    InspectionFrom = vehicle.InspectionFrom?.ToString("yyyy-MM-dd"),
+                    InspectionTo = vehicle.InspectionTo?.ToString("yyyy-MM-dd"),
+                    InsuranceFrom = vehicle.InsuranceFrom?.ToString("yyyy-MM-dd"),
+                    InsuranceTo = vehicle.InsuranceTo?.ToString("yyyy-MM-dd"),
+                    vehicle.FleetCardNumber,
+                    vehicle.IdProject,
+                    Service = new
+                    {
+                        vehicle.Service.ServiceName,
+                        vehicle.Service.Address,
+                        vehicle.Service.PhoneNumber
+                    },
+                    Leasing = new
+                    {
+                        vehicle.Leasing.Amount,
+                        vehicle.Leasing.MonthlyPayment,
+                        vehicle.Leasing.PaymentDay
+                    }
+                });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Zmiany zosta³y zapisane.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Nie uda³o siê zapisaæ zmian.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw b³êdy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"B³¹d podczas zapisywania zmian: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Snackbar.Add("Anulowano edycjê formularza.", Severity.Warning);
+    }
+
+    public class ProjectIds
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class VehicleDetails
+    {
+        [JsonPropertyName("id")]
+        public int ID { get; set; }
+
+        [JsonPropertyName("model")]
+        public string Model { get; set; }
+
+        [JsonPropertyName("color")]
+        public string Color { get; set; }
+
+        [JsonPropertyName("registration_number")]
+        public string RegistrationNumber { get; set; }
+
+        [JsonPropertyName("vin")]
+        public string Vin { get; set; }
+
+        [JsonPropertyName("inspection_from")]
+        public DateTime? InspectionFrom { get; set; }
+
+        [JsonPropertyName("inspection_to")]
+        public DateTime? InspectionTo { get; set; }
+
+        [JsonPropertyName("insurance_from")]
+        public DateTime? InsuranceFrom { get; set; }
+
+        [JsonPropertyName("insurance_to")]
+        public DateTime? InsuranceTo { get; set; }
+
+        [JsonPropertyName("fleet_card_number")]
+        public string FleetCardNumber { get; set; }
+
+        [JsonPropertyName("project_id")]
+        public int IdProject { get; set; }
+
+        [JsonPropertyName("project_name")]
+        public string ProjectName { get; set; }
+
+        [JsonPropertyName("service")]
+        public ServiceDetails Service { get; set; }
+
+        [JsonPropertyName("leasing")]
+        public LeasingDetails Leasing { get; set; }
+    }
+
+    public class ServiceDetails
+    {
+        [JsonPropertyName("id_service")]
+        public int IdService { get; set; }
+
+        [JsonPropertyName("serviceName")]
+        public string ServiceName { get; set; }
+
+        [JsonPropertyName("address")]
+        public string Address { get; set; }
+
+        [JsonPropertyName("phoneNumber")]
+        public string PhoneNumber { get; set; }
+    }
+
+    public class LeasingDetails
+    {
+        [JsonPropertyName("amount")]
+        public float Amount { get; set; }
+
+        [JsonPropertyName("monthlyPayment")]
+        public float MonthlyPayment { get; set; }
+
+        [JsonPropertyName("paymentDay")]
+        public int PaymentDay { get; set; }
+    }
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DeclineDialog>("Simple Dialog", options);
+    }
 
 }

@@ -9,7 +9,7 @@
     <MudGrid>
         <MudSpacer/>
         <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 480px;">
+            <MudPaper Elevation="2" Class="pa-4">
                 <MudText Typo="Typo.h6" Align="Align.Center">Ilość pracowników</MudText>
                 <MudChart ChartType="ChartType.Donut" LegendPosition="Position.Bottom" Width="400px" Height="380px"
                           InputData="@data" InputLabels="@labels">
@@ -46,7 +46,7 @@
                         {
                             var daysUntilInspection = (inspection.Date - DateTime.UtcNow).TotalDays;
 
-                            <MudTimelineItem Color="@(daysUntilInspection < 7 ? Color.Error : (daysUntilInspection < 21 ? Color.Warning : Color.Info))" TimelineAlign="TimelineAlign.End">
+                            <MudTimelineItem Color="@(daysUntilInspection < 14 ? Color.Error : (daysUntilInspection < 30 ? Color.Warning : Color.Info))" TimelineAlign="TimelineAlign.End">
                                 <MudText Typo="Typo.button">@inspection.RegistrationNumber</MudText>
                                     <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                         @inspection.Date.ToString("dd.MM.yyyy")

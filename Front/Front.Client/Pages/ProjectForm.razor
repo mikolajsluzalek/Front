@@ -1,48 +1,67 @@
 ﻿@page "/formularz-projektowy"
 @inject IDialogService DialogService
-@using System.ComponentModel.DataAnnotations;
-@using System.Text.RegularExpressions;
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@using MudBlazor.Components
+@using System.Text.Json.Serialization
+@using System.ComponentModel.DataAnnotations
 
 
-<MudContainer MaxWidth="MaxWidth.Small" Style="margin-top: 2rem;">
-    <EditForm Model="projectModel" OnValidSubmit="HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        <MudText Align="Align.Center" Typo="Typo.h4">Dodaj projekt</MudText>
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5">Formularz Samochodowy</MudText>
+            <MudForm @ref="form" OnValidSubmit="SaveChanges">
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Projektu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="projectModel.Name" Label="Nazwa" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.Office_Address" Label="Adres" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.Project_NIP" Label="NIP" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6"></MudItem>
+                 </MudGrid>
 
-        <MudCard>
-            <MudCardContent>
-                <MudTextField @bind-Value="projectModel.Name" Label="Nazwa projektu" Required="true" For="@(() => projectModel.Name)" />
-                <MudTextField @bind-Value="projectModel.Office_Address" Label="Adres" Required="true" For="@(() => projectModel.Office_Address)" />
-                <MudTextField @bind-Value="projectModel.Project_NIP" Label="NIP" Required="true" For="@(() => projectModel.Project_NIP)" />
-            </MudCardContent>
-        </MudCard>
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Kontaktowe</MudText>
+                                     
+                <MudGrid>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.First_Name" Label="Imię" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.Last_Name" Label="Nazwisko" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.Phone" Label="Numer Telefonu" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="projectModel.Position" Label="Stanowisko" />
+                     </MudItem>
+                </MudGrid>
 
-        <MudDivider />
-        <MudText Align="Align.Center" Typo="Typo.h6" Style="margin-top: 1rem; margin-bottom: 1rem;">Dane kontaktowe</MudText>
 
-        <MudCard>
-            <MudCardContent>
-                <MudTextField @bind-Value="contactPersonModel.First_Name" Label="Imię" For="@(() => contactPersonModel.First_Name)" />
-                <MudTextField @bind-Value="contactPersonModel.Last_Name" Label="Nazwisko" For="@(() => contactPersonModel.Last_Name)" />
-                <MudTextField @bind-Value="contactPersonModel.Phone" Label="Numer telefonu" For="@(() => contactPersonModel.Phone)" />
-                <MudTextField @bind-Value="contactPersonModel.Position" Label="Stanowisko" For="@(() => contactPersonModel.Position)" />
-            </MudCardContent>
-        </MudCard>
-
-        <MudDivider />
-
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialogAsync">Anuluj </MudButton>
-            <MudSpacer />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitProject">Dodaj Projekt</MudButton>
-        </MudCardActions>
-    </EditForm>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialogAsync">
+                        Anuluj
+                    </MudButton>
+                    <MudSpacer />
+                    <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="HandleValidSubmit">
+                        Zapisz
+                    </MudButton>
+                </MudCardActions>
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
 </MudContainer>
 
 @code {
     private ProjectModel projectModel = new ProjectModel();
-    private ContactPersonModel contactPersonModel = new ContactPersonModel();
+    private MudForm form;
 
     private async Task HandleValidSubmit()
     {
@@ -50,11 +69,50 @@
             !string.IsNullOrEmpty(projectModel.Office_Address) &&
             !string.IsNullOrEmpty(projectModel.Project_NIP))
         {
-            // Add logic to save Project and Contact Person
-        }
-        else
+            try
         {
-            // Show error or validation message
+            await form.Validate();
+            if (form.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PostAsJsonAsync("/project", new
+                {
+                    projectModel.Name,
+                    projectModel.Office_Address,
+                    projectModel.Project_NIP,
+                    projectModel.First_Name,
+                    projectModel.Last_Name,
+                    projectModel.Phone,
+                    projectModel.Position,
+                });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
+        }
         }
     }
 
@@ -65,25 +123,31 @@
 
     public class ProjectModel
     {
+        
         [Required(ErrorMessage = "Nazwa projektu jest wymagana.")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
+        [JsonPropertyName("office_address")]
         [Required(ErrorMessage = "Adres jest wymagany.")]
         public string Office_Address { get; set; }
 
+        [JsonPropertyName("project_nip")]
         [Required(ErrorMessage = "NIP jest wymagany.")]
         [RegularExpression(@"^\d{10}$", ErrorMessage = "NIP musi składać się z 10 cyfr.")]
         public string Project_NIP { get; set; }
-    }
 
-    public class ContactPersonModel
-    {
+        [JsonPropertyName("first_name")]
         public string First_Name { get; set; }
+
+        [JsonPropertyName("last_name")]
         public string Last_Name { get; set; }
 
+        [JsonPropertyName("phone")]
         [RegularExpression(@"^(\+?\d{2}\s?)?\d{9}$", ErrorMessage = "Numer telefonu musi mieć 9 cyfr lub być w formacie +xx i 9 cyfr.")]
         public string Phone { get; set; }
 
+        [JsonPropertyName("position")]
         public string Position { get; set; }
     }
 

@@ -10,11 +10,7 @@
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
-    <MudTable Items="@VehiclesList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
-              EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
-              ApplyButtonPosition="TableApplyButtonPosition.End"
-              RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" RowEditCommit="ItemHasBeenCommitted"
-              Filter="new Func<VehicleDetails,bool>(FilterFunc)">
+    <MudTable Items="@VehiclesList" Hover="true" Dense="false" ReadOnly="false" Filter="new Func<VehicleDetails,bool>(FilterFunc)">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Lista Pojazdów</MudText>
             <MudSpacer />
@@ -52,26 +48,6 @@
                     </MudButton>
                 </MudTd>
             </RowTemplate>
-            <RowEditingTemplate>
-                <MudTd DataLabel="ID">
-                    <MudTextField @bind-Value="context.Id" Disabled="true" />
-                </MudTd>
-                <MudTd DataLabel="Marka">
-                    <MudTextField @bind-Value="context.Make" Required />
-             </MudTd>
-             <MudTd DataLabel="Model">
-                 <MudTextField @bind-Value="context.Model" Required />
-             </MudTd>
-             <MudTd DataLabel="Tablica Rejestracyjna">
-                 <MudTextField @bind-Value="context.RegistrationNumber" Required />
-             </MudTd>
-             <MudTd DataLabel="Serwis Do">
-                 <MudDatePicker @bind-Date="context.InspectionTo" Required />
-             </MudTd>
-             <MudTd DataLabel="Koniec Ubezpieczenia">
-                 <MudDatePicker @bind-Date="context.InsuranceTo" Required />
-             </MudTd>
-         </RowEditingTemplate>
          <PagerContent>
              <MudTablePager />
          </PagerContent>
@@ -129,37 +105,6 @@
         {
             Snackbar.Add($"Błąd podczas ładowania pojazdów: {ex.Message}", Severity.Error);
         }
-    }
-
-
-    private void BackupItem(object vehicle)
-    {
-        vehicleBeforeEdit = new VehicleDetails
-        {
-            Make = ((VehicleDetails)vehicle).Make,
-            Model = ((VehicleDetails)vehicle).Model,
-            RegistrationNumber = ((VehicleDetails)vehicle).RegistrationNumber,
-            InspectionTo = ((VehicleDetails)vehicle).InspectionTo,
-            InsuranceTo = ((VehicleDetails)vehicle).InsuranceTo
-        };
-    }
-
-
-
-    private void ResetItemToOriginalValues(object vehicle)
-    {
-        ((VehicleDetails)vehicle).Make = vehicleBeforeEdit.Make;
-        ((VehicleDetails)vehicle).Model = vehicleBeforeEdit.Model;
-        ((VehicleDetails)vehicle).RegistrationNumber = vehicleBeforeEdit.RegistrationNumber;
-        ((VehicleDetails)vehicle).InspectionTo = vehicleBeforeEdit.InspectionTo;
-        ((VehicleDetails)vehicle).InsuranceTo = vehicleBeforeEdit.InsuranceTo;
-    }
-
-    private void ItemHasBeenCommitted(object vehicle)
-    {
-
-
-        Snackbar.Add($"Pojazd {((VehicleDetails)vehicle).Make} {((VehicleDetails)vehicle).Model} został zaktualizowany.", Severity.Success);
     }
 
 

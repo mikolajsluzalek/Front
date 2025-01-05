@@ -12,44 +12,90 @@
     {
         <MudProgressLinear Indeterminate="true" />
     }
-    else if (vehicle != null)
+    else if (@vehicle != null)
     {
         <MudForm @ref="editForm" Class="mb-3">
+    <!-- Dane pojazdu -->
+    <MudGrid>
+        <MudItem xs="12" md="6">
             <MudTextField @bind-Value="vehicle.Model" Label="Model" Required="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
             <MudTextField @bind-Value="vehicle.Color" Label="Kolor" />
+        </MudItem>
+        <MudItem xs="12" md="6">
             <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Required="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
             <MudTextField @bind-Value="vehicle.Vin" Label="VIN" />
-            <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Serwis od" />
-            <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Serwis do" />
-            <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" />
-            <MudDatePicker @bind-Date="vehicle.InsuranceTo" Label="Ubezpieczenie do" />
-            <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" />
-            <MudSelect @bind-Value="projects.Id" Label="Nazwa Projektu" Required="true">
-                @foreach (var project in projectId)
-                {
-                    <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
-                }
-            </MudSelect>
-        </MudForm>
-        <div>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges" Disabled="@isSubmitting">
-                Zapisz zmiany
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteVehicle" Disabled="@isSubmitting">
-                Usuń Samochód
-            </MudButton>
-        </div>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudDatePicker @bind-Date="vehicle.InspectionFrom" DateFormat="yyyy-MM-dd" Label="Serwis od" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudDatePicker @bind-Date="vehicle.InspectionTo" DateFormat="yyyy-MM-dd" Label="Serwis do" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudDatePicker @bind-Date="vehicle.InsuranceFrom" DateFormat="yyyy-MM-dd" Label="Ubezpieczenie od" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+    <MudDatePicker @bind-Date="vehicle.InsuranceTo" DateFormat="yyyy-MM-dd" Label="Ubezpieczenie do" />
+</MudItem>
+<MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" />
+</MudItem>
+<MudItem xs="12" md="6">
+    <MudSelect @bind-Value="vehicle.IdProject" Label="Nazwa Projektu" Required="true">
+        @foreach (var project in projectId)
+        {
+            <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+        }
+    </MudSelect>
+    </MudItem>
+
+    <!-- Dane serwisu -->
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Service.ServiceName" Label="Nazwa serwisu" Required="true" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Service.Address" Label="Adres serwisu" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon serwisu" />
+    </MudItem>
+
+    <!-- Dane leasingu -->
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Leasing.Amount" Label="Kwota leasingu" Required="true" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesięczna rata" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+    <MudTextField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzień płatności" />
+    </MudItem>
+    </MudGrid>
+</MudForm>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; gap: 1rem;">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges" Disabled="@isSubmitting">
+            Zapisz zmiany
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteVehicle" Disabled="@isSubmitting">
+            Usuń Samochód
+        </MudButton>
+    </div>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+        Powrót
+    </MudButton>
+</div>
     }
     else
     {
         <MudText Color="Color.Error">Nie udało się załadować szczegółów pojazdu.</MudText>
     }
 
-    <div style="margin-top: 1rem;">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
-            Powrót
-        </MudButton>
-    </div>
 </MudContainer>
 
 @code {
@@ -84,13 +130,13 @@
                 Snackbar.Add($"Nie znaleziono pojazdu o ID {id}.", Severity.Warning);
             }
 
-            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("projects");
+            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
             if (projects != null)
             {
-                projectId = projects.Select(veh => new ProjectIds
+                projectId = projects.Select(pro => new ProjectIds
                     {
-                        Id = veh.Id,
-                        Name = veh.Name
+                        Id = pro.Id,
+                        Name = pro.Name
                     }).ToList();
             }
             else
@@ -140,7 +186,33 @@
                 Http.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                var response = await Http.PutAsJsonAsync($"car/{id}", vehicle);
+                var response = await Http.PostAsJsonAsync($"car/{id}/update", new
+{
+    vehicle.Model,
+    vehicle.Color,
+    vehicle.RegistrationNumber,
+    vehicle.Vin,
+    InspectionFrom = vehicle.InspectionFrom?.ToString("yyyy-MM-dd"),
+    InspectionTo = vehicle.InspectionTo?.ToString("yyyy-MM-dd"),
+    InsuranceFrom = vehicle.InsuranceFrom?.ToString("yyyy-MM-dd"),
+    InsuranceTo = vehicle.InsuranceTo?.ToString("yyyy-MM-dd"),
+    vehicle.FleetCardNumber,
+    vehicle.IdProject,
+    Service = new
+    {
+        vehicle.Service.ServiceName,
+        vehicle.Service.Address,
+        vehicle.Service.PhoneNumber
+    },
+    Leasing = new
+    {
+        vehicle.Leasing.Amount,
+        vehicle.Leasing.MonthlyPayment,
+        vehicle.Leasing.PaymentDay
+    }
+});
+
+
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
@@ -163,6 +235,11 @@
         {
             isSubmitting = false;
         }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/samochody");
     }
 
     private async Task DeleteVehicle()
@@ -205,30 +282,79 @@
         }
     }
 
-    private void NavigateBack()
-    {
-        Navigation.NavigateTo("/samochody");
-    }
+    
 
     public class VehicleDetails
-    {
-        public int Id { get; set; }
-        public string Model { get; set; }
-        public string Color { get; set; }
-        [JsonPropertyName("registration_number")]
-        public string RegistrationNumber { get; set; }
-        public string Vin { get; set; }
-        [JsonPropertyName("inspection_from")]
-        public DateTime? InspectionFrom { get; set; }
-        [JsonPropertyName("inspection_to")]
-        public DateTime? InspectionTo { get; set; }
-        [JsonPropertyName("insurance_from")]
-        public DateTime? InsuranceFrom { get; set; }
-        [JsonPropertyName("insurance_to")]
-        public DateTime? InsuranceTo { get; set; }
-        [JsonPropertyName("fleet_card_number")]
-        public string FleetCardNumber { get; set; }
-        [JsonPropertyName("project_name")]
-        public string ProjectName { get; set; }
-    }
+{
+    [JsonPropertyName("id")]
+    public int ID { get; set; }
+
+    [JsonPropertyName("model")]
+    public string Model { get; set; }
+
+    [JsonPropertyName("color")]
+    public string Color { get; set; }
+
+    [JsonPropertyName("registration_number")]
+    public string RegistrationNumber { get; set; }
+
+    [JsonPropertyName("vin")]
+    public string Vin { get; set; }
+
+    [JsonPropertyName("inspection_from")]
+    public DateTime? InspectionFrom { get; set; }
+
+    [JsonPropertyName("inspection_to")]
+    public DateTime? InspectionTo { get; set; }
+
+    [JsonPropertyName("insurance_from")]
+    public DateTime? InsuranceFrom { get; set; }
+
+    [JsonPropertyName("insurance_to")]
+    public DateTime? InsuranceTo { get; set; }
+
+    [JsonPropertyName("fleet_card_number")]
+    public string FleetCardNumber { get; set; }
+
+    [JsonPropertyName("project_id")]
+    public int IdProject { get; set; }
+
+    [JsonPropertyName("project_name")]
+    public string ProjectName { get; set; }
+
+    [JsonPropertyName("service")]
+    public ServiceDetails Service { get; set; }
+
+    [JsonPropertyName("leasing")]
+    public LeasingDetails Leasing { get; set; }
+}
+
+public class ServiceDetails
+{
+    [JsonPropertyName("id_service")]
+    public int IdService { get; set; }
+
+    [JsonPropertyName("serviceName")]
+    public string ServiceName { get; set; }
+
+    [JsonPropertyName("address")]
+    public string Address { get; set; }
+
+    [JsonPropertyName("phoneNumber")]
+    public string PhoneNumber { get; set; }
+}
+
+public class LeasingDetails
+{
+    [JsonPropertyName("amount")]
+    public float Amount { get; set; }
+
+    [JsonPropertyName("monthlyPayment")]
+    public float MonthlyPayment { get; set; }
+
+    [JsonPropertyName("paymentDay")]
+    public int PaymentDay { get; set; }
+}
+
+
 }
