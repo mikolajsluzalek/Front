@@ -117,7 +117,7 @@
             if (string.IsNullOrEmpty(token))
             {
                 Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                return;
+                Navigation.NavigateTo("/");
             }
 
             Http.DefaultRequestHeaders.Authorization =
@@ -216,6 +216,8 @@
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                    await Task.Delay(1000);
+                    Navigation.NavigateTo("/samochody");
                 }
                 else
                 {

@@ -5,7 +5,7 @@
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @inject HttpClient Http
-
+@inject NavigationManager NavigationManager
 
 
 <div style="margin-top: 2rem;" />
@@ -78,7 +78,7 @@
             if (string.IsNullOrEmpty(token))
             {
                 Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                return;
+                NavigationManager.NavigateTo("/");
             }
 
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);

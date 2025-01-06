@@ -5,6 +5,8 @@
 @inject IJSRuntime JSRuntime
 @using MudBlazor.Components
 @using System.Text.Json.Serialization
+@inject NavigationManager NavigationManager
+
 
 <MudContainer MaxWidth="MaxWidth.Medium">
     <MudCard>
@@ -109,7 +111,7 @@
             if (string.IsNullOrEmpty(token))
             {
                 Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
-                return;
+                NavigationManager.NavigateTo("/");
             }
 
             Http.DefaultRequestHeaders.Authorization =
@@ -180,7 +182,9 @@
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Zmiany zosta³y zapisane.", Severity.Success);
+                    Snackbar.Add("Samochod zosta³ dodany.", Severity.Success);
+                    await Task.Delay(1000);
+                    NavigationManager.NavigateTo("/samochody");
                 }
                 else
                 {

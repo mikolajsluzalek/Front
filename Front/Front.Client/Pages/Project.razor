@@ -6,6 +6,7 @@
 @inject HttpClient Http
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
@@ -77,6 +78,13 @@
         {
             var token = await LocalStorage.GetItemAsync<string>("authToken");
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                NavigationManager.NavigateTo("/");
+            }
+
             var projects = await Http.GetFromJsonAsync<List<ProjectDetails>>("projects");
             if (projects != null)
             {

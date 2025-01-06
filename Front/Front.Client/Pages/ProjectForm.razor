@@ -6,6 +6,9 @@
 @using MudBlazor.Components
 @using System.Text.Json.Serialization
 @using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
 
 
 <MudContainer MaxWidth="MaxWidth.Medium">
@@ -59,7 +62,7 @@
     </MudCard>
 </MudContainer>
 
-@code {
+ @code {
     private ProjectModel projectModel = new ProjectModel();
     private MudForm form;
 
@@ -70,50 +73,66 @@
             !string.IsNullOrEmpty(projectModel.Project_NIP))
         {
             try
-        {
-            await form.Validate();
-            if (form.IsValid)
             {
-                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-                if (string.IsNullOrEmpty(token))
+                await form.Validate();
+                if (form.IsValid)
                 {
-                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                    return;
-                }
+                    var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                        return;
+                    }
 
-                Http.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    Http.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                var response = await Http.PostAsJsonAsync("/project", new
-                {
-                    projectModel.Name,
-                    projectModel.Office_Address,
-                    projectModel.Project_NIP,
-                    projectModel.First_Name,
-                    projectModel.Last_Name,
-                    projectModel.Phone,
-                    projectModel.Position,
-                });
+                    var response = await Http.PostAsJsonAsync("/project", new
+                    {
+                        projectModel.Name,
+                        projectModel.Office_Address,
+                        projectModel.Project_NIP,
+                        projectModel.First_Name,
+                        projectModel.Last_Name,
+                        projectModel.Phone,
+                        projectModel.Position,
+                    });
 
-                if (response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Snackbar.Add("Projekt został dodany.", Severity.Success);
+                        await Task.Delay(1000);
+                        NavigationManager.NavigateTo("/projekty");
+                    }
+                    else
+                    {
+                        Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                    }
                 }
                 else
                 {
-                    Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                    Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+                Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
-        }
-        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                NavigationManager.NavigateTo("/");
+            }
+       
     }
 
     private async Task SubmitProject()

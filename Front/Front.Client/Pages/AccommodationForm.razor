@@ -1,5 +1,229 @@
-﻿<h3>AccommodationForm</h3>
+﻿@page "/formularz-kwatery"
+@inject IDialogService DialogService
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@using MudBlazor.Components
+@using System.Text.Json.Serialization
+@inject NavigationManager NavigationManager
 
-@code {
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5">Formularz Kwatery</MudText>
+            <MudForm @ref="form" OnValidSubmit="SaveChanges">
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Kwatery</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="accommodation.City" Label="Miasto" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.AccommodationAddress" Label="Adres" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudNumericField @bind-Value="accommodation.NumberOfPlaces" Label="Liczba miejsc" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudSelect T="int" Label="Projekt" @bind-Value="accommodation.IdProject">
+                             @foreach (var project in projectList)
+                            {
+                                <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                 </MudGrid>
 
+                 <MudText Typo="Typo.h6" Class="mt-4">Dane Kontaktowe</MudText>
+                 <MudGrid>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.Contact.FirstName" Label="Imię" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.Contact.LastName" Label="Nazwisko" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.Contact.PhoneNumber" Label="Telefon" />
+                     </MudItem>
+                 </MudGrid>
+
+                 <MudText Typo="Typo.h6" Class="mt-4">Dane Płatności</MudText>
+                 <MudGrid>
+                     <MudItem xs="12" md="6">
+                         <MudNumericField @bind-Value="accommodation.Payment.Cost" Label="Koszt całkowity" Type="number" Required />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudNumericField @bind-Value="accommodation.Payment.Deposit" Label="Zadatek" Type="number" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.Payment.Contract" Label="Umowa" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudTextField @bind-Value="accommodation.Payment.AccountNumber" Label="Numer konta" />
+                     </MudItem>
+                     <MudItem xs="12" md="6">
+                         <MudNumericField @bind-Value="accommodation.Payment.PaymentDay" Label="Dzień płatności" Min="1" Max="31" />
+                     </MudItem>
+                 </MudGrid>
+
+                 <MudCardActions>
+                     <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialogAsync">
+                         Anuluj
+                     </MudButton>
+                     <MudSpacer />
+                     <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges">
+                         Zapisz
+                     </MudButton>
+                 </MudCardActions>
+             </MudForm>
+         </MudCardContent>
+     </MudCard>
+ </MudContainer>
+
+ @code {
+    private MudForm form;
+    private AccommodationDetails accommodation = new AccommodationDetails
+        {
+            Contact = new ContactDetails(),
+            Payment = new PaymentDetails()
+        };
+    private bool isSubmitting;
+    private bool isLoading = true;
+    private List<ProjectIds> projectList = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                NavigationManager.NavigateTo("/");
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            projectList = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+            if (projectList == null)
+            {
+                Snackbar.Add($"Brak projektów.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania projektów: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            await form.Validate();
+            if (form.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PostAsJsonAsync("/accommodation", new
+                {
+                    accommodation.City,
+                    accommodation.AccommodationAddress,
+                    accommodation.NumberOfPlaces,
+                    accommodation.IdProject,
+                    Contact = new
+                    {
+                        accommodation.Contact.FirstName,
+                        accommodation.Contact.LastName,
+                        accommodation.Contact.PhoneNumber
+                    },
+                    Payment = new
+                    {
+                        accommodation.Payment.Cost,
+                        accommodation.Payment.Deposit,
+                        accommodation.Payment.Contract,
+                        accommodation.Payment.AccountNumber,
+                        accommodation.Payment.PaymentDay
+                    }
+                });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Kwatera została dodana.", Severity.Success);
+                    await Task.Delay(1000);
+                    NavigationManager.NavigateTo("/kwatery");
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się dodać kwatery.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas dodawania kwatery: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DeclineDialog>("Czy na pewno chcesz anulować?", options);
+    }
+
+    public class ProjectIds
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class AccommodationDetails
+    {
+        public string City { get; set; }
+        public string AccommodationAddress { get; set; }
+        public int NumberOfPlaces { get; set; }
+        public ContactDetails Contact { get; set; }
+        public PaymentDetails Payment { get; set; }
+        public int IdProject { get; set; }
+    }
+
+    public class ContactDetails
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string PhoneNumber { get; set; }
+    }
+
+    public class PaymentDetails
+    {
+        public decimal Cost { get; set; }
+        public decimal Deposit { get; set; }
+        public string Contract { get; set; }
+        public string AccountNumber { get; set; }
+        public int PaymentDay { get; set; }
+    }
 }
