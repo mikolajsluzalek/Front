@@ -78,7 +78,7 @@
                 if (form.IsValid)
                 {
                     var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-                    if (string.IsNullOrEmpty(token))
+                    if (!string.IsNullOrEmpty(token))
                     {
                         Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
                         return;
