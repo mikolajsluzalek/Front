@@ -187,31 +187,37 @@
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                 var response = await Http.PostAsJsonAsync($"car/{id}/update", new
-{
-    vehicle.Model,
-    vehicle.Color,
-    vehicle.RegistrationNumber,
-    vehicle.Vin,
-    InspectionFrom = vehicle.InspectionFrom?.ToString("yyyy-MM-dd"),
-    InspectionTo = vehicle.InspectionTo?.ToString("yyyy-MM-dd"),
-    InsuranceFrom = vehicle.InsuranceFrom?.ToString("yyyy-MM-dd"),
-    InsuranceTo = vehicle.InsuranceTo?.ToString("yyyy-MM-dd"),
-    vehicle.FleetCardNumber,
-    vehicle.IdProject,
-    Service = new
-    {
-        vehicle.Service.ServiceName,
-        vehicle.Service.Address,
-        vehicle.Service.PhoneNumber
-    },
-    Leasing = new
-    {
-        vehicle.Leasing.Amount,
-        vehicle.Leasing.MonthlyPayment,
-        vehicle.Leasing.PaymentDay
-    }
-});
-
+                {
+                    vehicle.Model,
+                    vehicle.Color,
+                    vehicle.RegistrationNumber,
+                    vehicle.Vin,
+                    InspectionFrom = vehicle.InspectionFrom?.ToString("yyyy-MM-dd"),
+                    InspectionTo = vehicle.InspectionTo?.ToString("yyyy-MM-dd"),
+                    InsuranceFrom = vehicle.InsuranceFrom?.ToString("yyyy-MM-dd"),
+                    InsuranceTo = vehicle.InsuranceTo?.ToString("yyyy-MM-dd"),
+                    vehicle.FleetCardNumber,
+                    vehicle.IdProject,
+                    Service = new
+                    {
+                        vehicle.Service.ServiceName,
+                        vehicle.Service.Address,
+                        vehicle.Service.PhoneNumber
+                    },  
+                    Leasing = new
+                    {
+                        vehicle.Leasing.Amount,
+                        vehicle.Leasing.MonthlyPayment,
+                        vehicle.Leasing.PaymentDay
+                    }
+                });
+    
+                var employeeData = System.Text.Json.JsonSerializer.Serialize(vehicle, new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+                Console.WriteLine("Dane wysyłane do API:");
+                Console.WriteLine(employeeData);
 
                 if (response.IsSuccessStatusCode)
                 {

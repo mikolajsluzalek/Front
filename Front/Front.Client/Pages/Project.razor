@@ -78,7 +78,8 @@
         {
             var token = await LocalStorage.GetItemAsync<string>("authToken");
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            
+
+
             if (!string.IsNullOrEmpty(token))
             {
                 Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);

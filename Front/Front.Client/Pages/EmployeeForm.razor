@@ -1,151 +1,399 @@
 ﻿@page "/formularz-pracowniczy"
 @inject IDialogService DialogService
-@using MudBlazor.Components
+@using System.Text.Json.Serialization
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <MudContainer MaxWidth="MaxWidth.Medium">
 <MudCard>
     <MudCardContent>
         <MudText Typo="Typo.h5">Formularz Pracownika</MudText>
-        <MudForm @ref="form" OnValidSubmit="HandleValidSubmit">
-            <MudText Typo="Typo.h6" Class="mt-4">Dane Podstawowe</MudText>
-            <MudGrid>
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="employee.LastName" Label="Nazwisko" Required />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.FirstName" Label="Imię" Required />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.PESEL" Label="PESEL" Required />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.PassportNumber" Label="Numer Paszportu" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="employee.BirthDate" Label="Data Urodzenia" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.Email" Label="Email" Type="email" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.PhoneNumber" Label="Numer Telefonu" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employee.Address" Label="Adres Zamieszkania" />
-                 </MudItem>
-             </MudGrid>
-
-
-
-             <MudText Typo="Typo.h6" Class="mt-4">Karta Profilu</MudText>
-             <MudGrid>
-                 <MudItem xs="12" md="6">
-                         <MudSelect T="string" Label="Wybierz opcję" @bind-Value="SelectedOption">
-                             <MudSelectItem Value="@("Wiza")">Wiza</MudSelectItem>
-                             <MudSelectItem Value="@("Karta")">Karta</MudSelectItem>
-                             <MudSelectItem Value="@("Bio")">Bio</MudSelectItem>
-                         </MudSelect>
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="profile.ValidUntil" Label="Ważność" />
-                 </MudItem>
-             </MudGrid>
-
-             <!-- Zatrudnienie -->
-             <MudText Typo="Typo.h6" Class="mt-4">Zatrudnienie</MudText>
-             <MudGrid>
-                 <MudItem xs="12" md="6">
-                     <MudTextField @bind-Value="employment.ContractType" Label="Rodzaj Umowy" Required />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="employment.DateFrom" Label="Data Od" Required />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="employment.DateTo" Label="Data Do" />
-                 </MudItem>
-                 <MudItem xs="12" md="12">
-                     <MudTextField @bind-Value="employment.Permissions" Label="Uprawnienia" />
-                 </MudItem>
-             </MudGrid>
-
-             <!-- Badania -->
-             <MudText Typo="Typo.h6" Class="mt-4">Badania</MudText>
-             <MudGrid>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="tests.BHP_ValidUntil" Label="BHP Ważne Do" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="tests.PsychologicalTest_ValidUntil" Label="Psychotesty Ważne Do" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="tests.MedicalTest_ValidUntil" Label="Badania Lekarskie Ważne Do" />
-                 </MudItem>
-                 <MudItem xs="12" md="6">
-                     <MudDatePicker @bind-Date="tests.SanitaryTest_ValidUntil" Label="Sanepid Ważne Do" />
-                 </MudItem>
-             </MudGrid>
-
-             <MudCardActions>
-                     <MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
-                         Anuluj
-                     </MudButton>
-                 <MudSpacer />
-                 <MudButton Type="submit" Variant="Variant.Filled" Color="Color.Primary">Zapisz</MudButton>
-                 </MudCardActions>
-         </MudForm>
+            <MudForm @ref="form" Class="mb-3">
+                <MudText Typo="Typo.h6" Class="mt-4">Dane Pracownika</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.FirstName" Label="Imię" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.LastName" Label="Nazwisko" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.PassportNumber" Label="Numer paszportu" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.PESEL" Label="PESEL" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.Email" Label="Email" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.DateOfBirth" DateFormat="yyyy-MM-dd" Label="Data urodzenia" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.FatherName" Label="Imię ojca" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.MotherName" Label="Imię matki" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.BankAccount" Label="Konto bankowe" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.AddressPoland" Label="Adres w Polsce" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.HomeAddress" Label="Adres zamieszkania" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6" Class="mt-4">Karty Pobytu</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.ResidenceCard.Visa" DateFormat="yyyy-MM-dd" Label="Wiza (ważna do)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.ResidenceCard.Bio" DateFormat="yyyy-MM-dd" Label="Bio (ważna do)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.ResidenceCard.Tcard" DateFormat="yyyy-MM-dd" Label="Karta Pobytu (ważna do)" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6" Class="mt-4">Zatrudnienie</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.Employment.ContractType" Label="Rodzaj umowy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Employment.StartDate" DateFormat="yyyy-MM-dd" Label="Początek umowy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Employment.EndDate" DateFormat="yyyy-MM-dd" Label="Koniec umowy" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.Employment.Authorizations" Label="Uprawnienia" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6" Class="mt-4">Badania Medyczne</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Medicals.OshValidUntil" DateFormat="yyyy-MM-dd" Label="BHP (ważne do)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Medicals.PsychotestsValidUntil" DateFormat="yyyy-MM-dd" Label="Psychotesty (ważne do)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Medicals.MedicalValidUntil" DateFormat="yyyy-MM-dd" Label="Badania lekarskie (ważne do)" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="employee.Medicals.SanitaryValidUntil" DateFormat="yyyy-MM-dd" Label="Sanepid (ważne do)" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6" Class="mt-4">Połączony z:</MudText>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="employee.ProjectId" Label="Nazwa Projektu" Required="true">
+                            @foreach (var project in projectId)
+                            {
+                                <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="employee.AccommodationId" Label="Adres Kwatery">
+                            @foreach (var accomodation in accommodationId)
+                            {
+                                <MudSelectItem Value="@(accomodation.Id)">@accomodation.Address</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="employee.CarId" Label="Rejestracja samochodu">
+                            @foreach (var car in carId)
+                            {
+                                <MudSelectItem Value="@(car.Id)">@car.RegistrationNumber</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveChanges" Disabled="@isSubmitting">
+                        Zapisz zmiany
+                    </MudButton>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+                    Powrót
+                </MudButton>
+            </div>
      </MudCardContent>
  </MudCard>
  </MudContainer>
 
  @code {
+    private EmployeeDetails employee = new EmployeeDetails
+        {
+            ResidenceCard = new ResidenceCard(),
+            Employment = new Employment(),
+            Medicals = new Medicals()
+        };
+    private List<ProjectIds> projectId = new List<ProjectIds>();
+    private List<CarIds> carId = new List<CarIds>();
+    private List<AccommodationIds> accommodationId = new List<AccommodationIds>();
+
+    private bool isLoading = true;
+    private bool isSubmitting = false;
     private MudForm form;
-    private Employee employee = new Employee();
-    private Profile profile = new Profile();
-    private Employment employment = new Employment();
-    private Tests tests = new Tests();
 
-    private string SelectedOption { get; set; } = "";
-
-
-    private void HandleValidSubmit()
+    private async Task SaveChanges()
     {
-        // Logika zapisu formularza
+        isSubmitting = true;
+        NormalizeEmployeeData();
+
+
+        try
+        {
+            await form.Validate();
+            if (form.IsValid)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    return;
+                }
+
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.PostAsJsonAsync($"employee", new
+                {
+                    employee.LastName,
+                    employee.FirstName,
+                    employee.PassportNumber,
+                    employee.PESEL,
+                    employee.Email,
+                    DateOfBirth = employee.DateOfBirth?.ToString("yyyy-MM-dd"),
+                    employee.FatherName,
+                    employee.MotherName,
+                    employee.BankAccount,
+                    employee.AddressPoland,
+                    employee.HomeAddress,
+                    Medicals = new
+                    {
+                        OshValidUntil = employee.Medicals.OshValidUntil?.ToString("yyyy-MM-dd"),
+                        PsychotestsValidUntil = employee.Medicals.PsychotestsValidUntil?.ToString("yyyy-MM-dd"),
+                        MedicalValidUntil = employee.Medicals.MedicalValidUntil?.ToString("yyyy-MM-dd"),
+                        SanitaryValidUntil = employee.Medicals.SanitaryValidUntil?.ToString("yyyy-MM-dd")
+                    },
+                    Employment = new
+                    {
+                        employee.Employment.ContractType,
+                        StartDate = employee.Employment.StartDate?.ToString("yyyy-MM-dd"),
+                        EndDate = employee.Employment.EndDate?.ToString("yyyy-MM-dd"),
+                        employee.Employment.Authorizations
+                    },
+                    ResidenceCard = new
+                    {
+                        Bio = employee.ResidenceCard.Bio?.ToString("yyyy-MM-dd"),
+                        Visa = employee.ResidenceCard.Visa?.ToString("yyyy-MM-dd"),
+                        Tcard = employee.ResidenceCard.Tcard?.ToString("yyyy-MM-dd"),
+                    },
+                    employee.ProjectId,
+                    employee.CarId,
+                    employee.AccommodationId
+                });
+
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                    await Task.Delay(1000);
+                    Navigation.NavigateTo("/pracownicy");
+                }
+                else
+                {
+                    var employeeData = System.Text.Json.JsonSerializer.Serialize(employee, new System.Text.Json.JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        });
+                    Console.WriteLine("Dane wysyłane do API:");
+                    Console.WriteLine(employeeData);
+                    Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Popraw błędy w formularzu przed zapisaniem.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+
+            Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
-
-
-    public class Employee
+    private void NormalizeEmployeeData()
     {
-        public string FirstName { get; set; }
+        if (employee == null)
+        {
+            throw new InvalidOperationException("Obiekt employee nie został zainicjalizowany.");
+        }
+
+        employee.FirstName = string.IsNullOrWhiteSpace(employee.FirstName) ? null : employee.FirstName;
+        employee.LastName = string.IsNullOrWhiteSpace(employee.LastName) ? null : employee.LastName;
+        employee.PassportNumber = string.IsNullOrWhiteSpace(employee.PassportNumber) ? null : employee.PassportNumber;
+        employee.PESEL = string.IsNullOrWhiteSpace(employee.PESEL) ? null : employee.PESEL;
+        employee.Email = string.IsNullOrWhiteSpace(employee.Email) ? null : employee.Email;
+        employee.FatherName = string.IsNullOrWhiteSpace(employee.FatherName) ? null : employee.FatherName;
+        employee.MotherName = string.IsNullOrWhiteSpace(employee.MotherName) ? null : employee.MotherName;
+        employee.BankAccount = string.IsNullOrWhiteSpace(employee.BankAccount) ? null : employee.BankAccount;
+        employee.AddressPoland = string.IsNullOrWhiteSpace(employee.AddressPoland) ? null : employee.AddressPoland;
+        employee.HomeAddress = string.IsNullOrWhiteSpace(employee.HomeAddress) ? null : employee.HomeAddress;
+
+        if (employee.ResidenceCard == null)
+        {
+            employee.ResidenceCard = new ResidenceCard();
+        }
+        else
+        {
+            employee.ResidenceCard.Bio = employee.ResidenceCard.Bio.HasValue ? employee.ResidenceCard.Bio : null;
+            employee.ResidenceCard.Visa = employee.ResidenceCard.Visa.HasValue ? employee.ResidenceCard.Visa : null;
+            employee.ResidenceCard.Tcard = employee.ResidenceCard.Tcard.HasValue ? employee.ResidenceCard.Tcard : null;
+        }
+
+        if (employee.Employment == null)
+        {
+            employee.Employment = new Employment();
+        }
+        else
+        {
+            employee.Employment.ContractType = string.IsNullOrWhiteSpace(employee.Employment.ContractType) ? null : employee.Employment.ContractType;
+            employee.Employment.StartDate = employee.Employment.StartDate.HasValue ? employee.Employment.StartDate : null;
+            employee.Employment.EndDate = employee.Employment.EndDate.HasValue ? employee.Employment.EndDate : null;
+            employee.Employment.Authorizations = string.IsNullOrWhiteSpace(employee.Employment.Authorizations) ? null : employee.Employment.Authorizations;
+        }
+
+        if (employee.Medicals == null)
+        {
+            employee.Medicals = new Medicals();
+        }
+        else
+        {
+            employee.Medicals.OshValidUntil = employee.Medicals.OshValidUntil.HasValue ? employee.Medicals.OshValidUntil : null;
+            employee.Medicals.PsychotestsValidUntil = employee.Medicals.PsychotestsValidUntil.HasValue ? employee.Medicals.PsychotestsValidUntil : null;
+            employee.Medicals.MedicalValidUntil = employee.Medicals.MedicalValidUntil.HasValue ? employee.Medicals.MedicalValidUntil : null;
+            employee.Medicals.SanitaryValidUntil = employee.Medicals.SanitaryValidUntil.HasValue ? employee.Medicals.SanitaryValidUntil : null;
+        }
+
+        employee.AccommodationId = employee.AccommodationId.HasValue ? employee.AccommodationId : null;
+        employee.CarId = employee.CarId.HasValue ? employee.CarId : null;
+    }
+
+    public class EmployeeDetails
+    {
+        [JsonPropertyName("last_name")]
         public string LastName { get; set; }
+        [JsonPropertyName("first_name")]
+        public string FirstName { get; set; }
+        [JsonPropertyName("passport_number")]
         public string PassportNumber { get; set; }
+        [JsonPropertyName("pesel")]
         public string PESEL { get; set; }
-        public DateTime? BirthDate { get; set; }
+        [JsonPropertyName("email")]
         public string Email { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Address { get; set; }
+        [JsonPropertyName("date_of_birth")]
+        public DateTime? DateOfBirth { get; set; }
+        [JsonPropertyName("father_name")]
+        public string FatherName { get; set; }
+        [JsonPropertyName("mother_name")]
+        public string MotherName { get; set; }
+        [JsonPropertyName("bank_account")]
+        public string BankAccount { get; set; }
+        [JsonPropertyName("address_poland")]
+        public string AddressPoland { get; set; }
+        [JsonPropertyName("home_address")]
+        public string? HomeAddress { get; set; }
+        [JsonPropertyName("residence_card")]
+        public ResidenceCard? ResidenceCard { get; set; }
+        [JsonPropertyName("employment")]
+        public Employment? Employment { get; set; }
+        [JsonPropertyName("medicals")]
+        public Medicals? Medicals { get; set; }
+        [JsonPropertyName("project_id")]
+        public int ProjectId { get; set; }
+        [JsonPropertyName("accommodation_id")]
+        public int? AccommodationId { get; set; }
+        [JsonPropertyName("car_id")]
+        public int? CarId { get; set; }
     }
 
-    public class Profile
+    public class ResidenceCard
     {
-        public string Card { get; set; }
-        public DateTime? ValidUntil { get; set; }
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("bio")]
+        public DateTime? Bio { get; set; }
+        [JsonPropertyName("visa")]
+        public DateTime? Visa { get; set; }
+        [JsonPropertyName("tcard")]
+        public DateTime? Tcard { get; set; }
     }
 
     public class Employment
     {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("contract_type")]
         public string ContractType { get; set; }
-        public DateTime? DateFrom { get; set; }
-        public DateTime? DateTo { get; set; }
-        public string Permissions { get; set; }
+        [JsonPropertyName("start_date")]
+        public DateTime? StartDate { get; set; }
+        [JsonPropertyName("end_date")]
+        public DateTime? EndDate { get; set; }
+        [JsonPropertyName("authorizations")]
+        public string? Authorizations { get; set; }
     }
 
-    public class Tests
+    public class Medicals
     {
-        public DateTime? BHP_ValidUntil { get; set; }
-        public DateTime? PsychologicalTest_ValidUntil { get; set; }
-        public DateTime? MedicalTest_ValidUntil { get; set; }
-        public DateTime? SanitaryTest_ValidUntil { get; set; }
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+        [JsonPropertyName("osh_valid_until")]
+        public DateTime? OshValidUntil { get; set; }
+        [JsonPropertyName("psychotests_valid_until")]
+        public DateTime? PsychotestsValidUntil { get; set; }
+        [JsonPropertyName("medical_valid_until")]
+        public DateTime? MedicalValidUntil { get; set; }
+        [JsonPropertyName("sanitary_valid_until")]
+        public DateTime? SanitaryValidUntil { get; set; }
+    }
+    public class ProjectIds
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+    }
+    public class CarIds
+    {
+        [JsonPropertyName("id")]
+        public int? Id { get; set; }
+
+        [JsonPropertyName("registration_number")]
+        public string? RegistrationNumber { get; set; }
+    }
+
+    public class AccommodationIds
+    {
+        public int? Id { get; set; }
+
+        [JsonPropertyName("address")]
+        public string? Address { get; set; }
     }
 
     private Task OpenDialogAsync()
@@ -153,5 +401,70 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
 
         return DialogService.ShowAsync<DeclineDialog>("Simple Dialog", options);
+    }
+
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/pracownicy");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                Navigation.NavigateTo("/");
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+            if (projects != null)
+            {
+                projectId = projects.Select(pro => new ProjectIds
+                    {
+                        Id = pro.Id,
+                        Name = pro.Name
+                    }).ToList();
+            }
+
+            var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
+            if (cars != null)
+            {
+                carId = cars.Select(car => new CarIds
+                    {
+                        Id = car.Id,
+                        RegistrationNumber = car.RegistrationNumber
+                    }).ToList();
+            }
+
+            var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
+            if (accommodations != null)
+            {
+                accommodationId = accommodations.Select(acc => new AccommodationIds
+                    {
+                        Id = acc.Id,
+                        Address = acc.Address
+                    }).ToList();
+            }
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Snackbar.Add($"Pracownik nie istnieje.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania szczegółów pracownika: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

@@ -4,6 +4,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
     <MudText Typo="Typo.h5" Class="mb-3">Szczegóły Pracownika</MudText>
@@ -13,6 +14,7 @@
     }
     else if (employee != null)
     {
+     <MudForm @ref="editForm" Class="mb-3">
         <MudText Typo="Typo.h6" Class="mt-4">Dane Pracownika</MudText>
         <MudGrid>
             <MudItem xs="12" md="6">
@@ -118,6 +120,7 @@
                 </MudSelect>
             </MudItem>
         </MudGrid>
+        </MudForm>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
             <div style="display: flex; gap: 1rem;">
@@ -140,7 +143,7 @@
 </MudContainer>
 
 
-    @code {
+@code {
     [Parameter]
     public int id { get; set; }
 
@@ -283,7 +286,7 @@
 
 
 
-        private async Task SaveChanges()
+    private async Task SaveChanges()
     {
         isSubmitting = true;
         NormalizeEmployeeData(); 
@@ -301,10 +304,49 @@
                     return;
                 }
 
-                Http.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                var response = await Http.PostAsJsonAsync($"employee/{id}/update", employee);
+                var response = await Http.PostAsJsonAsync($"employee/{id}/update", new
+                {
+                    employee.Id,
+                    employee.LastName,
+                    employee.FirstName,
+                    employee.PassportNumber,
+                    employee.PESEL,
+                    employee.Email,
+                    DateOfBirth = employee.DateOfBirth?.ToString("yyyy-MM-dd"),
+                    employee.FatherName,
+                    employee.MotherName,
+                    employee.BankAccount,
+                    employee.AddressPoland,
+                    employee.HomeAddress,
+                    Medicals = new
+                    {
+                        employee.Medicals.Id,
+                        OshValidUntil = employee.Medicals.OshValidUntil?.ToString("yyyy-MM-dd"),
+                        PsychotestsValidUntil = employee.Medicals.PsychotestsValidUntil?.ToString("yyyy-MM-dd"),
+                        MedicalValidUntil = employee.Medicals.MedicalValidUntil?.ToString("yyyy-MM-dd"),
+                        SanitaryValidUntil = employee.Medicals.SanitaryValidUntil?.ToString("yyyy-MM-dd")
+                    },
+                    Employment = new
+                    {
+                        employee.Employment.Id,
+                        employee.Employment.ContractType,
+                        StartDate = employee.Employment.StartDate?.ToString("yyyy-MM-dd"),
+                        EndDate = employee.Employment.EndDate?.ToString("yyyy-MM-dd"),
+                        employee.Employment.Authorizations
+                    },
+                    ResidenceCard = new
+                    {
+                        employee.ResidenceCard.Id,
+                        Bio = employee.ResidenceCard.Bio?.ToString("yyyy-MM-dd"),
+                        Visa = employee.ResidenceCard.Visa?.ToString("yyyy-MM-dd"),
+                        Tcard = employee.ResidenceCard.Tcard?.ToString("yyyy-MM-dd"),
+                    },
+                    employee.ProjectId,
+                    employee.CarId,
+                    employee.AccommodationId
+                });
 
 
                 if (response.IsSuccessStatusCode)
@@ -315,6 +357,12 @@
                 }
                 else
                 {
+                    var employeeData = System.Text.Json.JsonSerializer.Serialize(employee, new System.Text.Json.JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        });
+                    Console.WriteLine("Dane wysyłane do API:");
+                    Console.WriteLine(employeeData);
                     Snackbar.Add("Nie udało się zapisać zmian.", Severity.Error);
                 }
             }
@@ -325,12 +373,7 @@
         }
         catch (Exception ex)
         {
-            var employeeData = System.Text.Json.JsonSerializer.Serialize(employee, new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-            Console.WriteLine("Dane wysyłane do API:");
-            Console.WriteLine(employeeData);
+            
             Snackbar.Add($"Błąd podczas zapisywania zmian: {ex.Message}", Severity.Error);
         }
         finally
@@ -412,11 +455,11 @@
         [JsonPropertyName("home_address")]
         public string? HomeAddress { get; set; }
         [JsonPropertyName("residence_card")]
-        public ResidenceCard ResidenceCard { get; set; }
+        public ResidenceCard? ResidenceCard { get; set; }
         [JsonPropertyName("employment")]
-        public Employment Employment { get; set; }
+        public Employment? Employment { get; set; }
         [JsonPropertyName("medicals")]
-        public Medicals Medicals { get; set; }
+        public Medicals? Medicals { get; set; }
         [JsonPropertyName("project_id")]
         public int ProjectId { get; set; }
         [JsonPropertyName("accommodation_id")]
