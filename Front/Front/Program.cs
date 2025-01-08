@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using Front.Client.Pages;
 using Front.Components;
 using MudBlazor.Services;
@@ -10,6 +11,13 @@ builder.Services.AddMudServices();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri("http://localhost:8000/")
+});
+
+builder.Services.AddBlazoredLocalStorage();
 
 var app = builder.Build();
 

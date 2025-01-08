@@ -101,34 +101,40 @@
     private bool isSubmitting = false;
     private MudForm editForm;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigation.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    Navigation.NavigateTo("/");
+                }
 
-            accommodation = await Http.GetFromJsonAsync<AccommodationDetails>($"accommodation/{id}");
-            if (accommodation == null)
-            {
-                Snackbar.Add($"Nie znaleziono kwatery o ID {id}.", Severity.Warning);
-            }
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-            if (projects != null)
-            {
-                projectId = projects.Select(pro => new ProjectIds
-                    {
-                        Id = pro.Id,
-                        Name = pro.Name
-                    }).ToList();
+
+                accommodation = await Http.GetFromJsonAsync<AccommodationDetails>($"accommodation/{id}");
+                if (accommodation == null)
+                {
+                    Snackbar.Add($"Nie znaleziono kwatery o ID {id}.", Severity.Warning);
+                }
+
+                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projects != null)
+                {
+                    projectId = projects.Select(pro => new ProjectIds
+                        {
+                            Id = pro.Id,
+                            Name = pro.Name
+                        }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
+                }
             }
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)

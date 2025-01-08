@@ -132,7 +132,7 @@
  </MudCard>
  </MudContainer>
 
- @code {
+@code {
     private EmployeeDetails employee = new EmployeeDetails
         {
             ResidenceCard = new ResidenceCard(),
@@ -409,49 +409,52 @@
         Navigation.NavigateTo("/pracownicy");
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigation.NavigateTo("/");
-                return;
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    Navigation.NavigateTo("/");
+                }
 
-            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-            if (projects != null)
-            {
-                projectId = projects.Select(pro => new ProjectIds
-                    {
-                        Id = pro.Id,
-                        Name = pro.Name
-                    }).ToList();
-            }
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
-            if (cars != null)
-            {
-                carId = cars.Select(car => new CarIds
-                    {
-                        Id = car.Id,
-                        RegistrationNumber = car.RegistrationNumber
-                    }).ToList();
-            }
 
-            var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
-            if (accommodations != null)
-            {
-                accommodationId = accommodations.Select(acc => new AccommodationIds
-                    {
-                        Id = acc.Id,
-                        Address = acc.Address
-                    }).ToList();
+                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projects != null)
+                {
+                    projectId = projects.Select(pro => new ProjectIds
+                        {
+                            Id = pro.Id,
+                            Name = pro.Name
+                        }).ToList();
+                }
+
+                var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
+                if (cars != null)
+                {
+                    carId = cars.Select(car => new CarIds
+                        {
+                            Id = car.Id,
+                            RegistrationNumber = car.RegistrationNumber
+                        }).ToList();
+                }
+
+                var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
+                if (accommodations != null)
+                {
+                    accommodationId = accommodations.Select(acc => new AccommodationIds
+                        {
+                            Id = acc.Id,
+                            Address = acc.Address
+                        }).ToList();
+                }
             }
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)

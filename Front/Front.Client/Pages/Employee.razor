@@ -6,9 +6,17 @@
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 @inject NavigationManager Navigate
+@rendermode @(new InteractiveAutoRenderMode(false))
+
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
+            @if (isLoading)
+    {
+        <MudTable Items="@EmployeeList" Hover="true" Loading="true" Dense="false" ReadOnly="false" Filter="new Func<EmployeeDetails,bool>(FilterFunc)"> </MudTable>
+    }
+    else
+    {
     <MudTable Items="@EmployeeList" Hover="true" Dense="false" ReadOnly="false" Filter="new Func<EmployeeDetails,bool>(FilterFunc)">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Lista Pracowników</MudText>
@@ -50,35 +58,44 @@
     <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
             <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-pracowniczy">Dodaj Pracownika</MudButton>
     </div>
+    }
 </MudContainer>
 
-@code {
+    @code {
     private string searchString = string.Empty;
     private List<EmployeeDetails> EmployeeList = new List<EmployeeDetails>();
     private EmployeeDetails selectedEmployee;
+    private bool isLoading = true;
 
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigate.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    Navigate.NavigateTo("/");
+                }
 
-            var employees = await Http.GetFromJsonAsync<List<EmployeeDetails>>("employees");
-            if (employees != null)
-            {
-                EmployeeList = employees;
-            }
-            else
-            {
-                Snackbar.Add("Nie udało się załadować danych pracowników.", Severity.Error);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+
+                var employees = await Http.GetFromJsonAsync<List<EmployeeDetails>>("employees");
+                if (employees != null)
+                {
+                    EmployeeList = employees;
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się załadować danych pracowników.", Severity.Error);
+                }
             }
         }
         catch (Exception ex)

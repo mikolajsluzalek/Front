@@ -2,7 +2,7 @@
 @using System.Text.Json.Serialization
 @inject HttpClient Http
 @inject ISnackbar Snackbar
-@inject NavigationManager Navigation
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
@@ -109,42 +109,46 @@
     private bool isSubmitting = false;
     private MudForm editForm;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigation.NavigateTo("/");
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    NavigationManager.NavigateTo("/");
+                }
+
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+
+                vehicle = await Http.GetFromJsonAsync<VehicleDetails>($"car/{id}");
+                if (vehicle == null)
+                {
+                    Snackbar.Add($"Nie znaleziono pojazdu o ID {id}.", Severity.Warning);
+                }
+
+                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projects != null)
+                {
+                    projectId = projects.Select(pro => new ProjectIds
+                        {
+                            Id = pro.Id,
+                            Name = pro.Name
+                        }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+                }
+
             }
-
-            Http.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-
-            vehicle = await Http.GetFromJsonAsync<VehicleDetails>($"car/{id}");
-            if (vehicle == null)
-            {
-                Snackbar.Add($"Nie znaleziono pojazdu o ID {id}.", Severity.Warning);
-            }
-
-            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-            if (projects != null)
-            {
-                projectId = projects.Select(pro => new ProjectIds
-                    {
-                        Id = pro.Id,
-                        Name = pro.Name
-                    }).ToList();
-            }
-            else
-            {
-                Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
-            }
-
-
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -223,7 +227,7 @@
                 {
                     Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
                     await Task.Delay(1000);
-                    Navigation.NavigateTo("/samochody");
+                    NavigationManager.NavigateTo("/samochody");
                 }
                 else
                 {
@@ -247,7 +251,7 @@
 
     private void NavigateBack()
     {
-        Navigation.NavigateTo("/samochody");
+        NavigationManager.NavigateTo("/samochody");
     }
 
     private async Task DeleteVehicle()

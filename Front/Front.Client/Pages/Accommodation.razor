@@ -9,6 +9,12 @@
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
+        @if (isLoading)
+    {
+        <MudTable Items="@AccommodationList" Hover="true" Loading="true" Dense="false" ReadOnly="false" Filter="new Func<AccommodationDetails,bool>(FilterFunc)"> </MudTable>
+    }
+    else
+    {
     <MudTable Items="@AccommodationList" Hover="true" Dense="false" ReadOnly="false" Filter="new Func<AccommodationDetails,bool>(FilterFunc)">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Lista Kwater</MudText>
@@ -53,42 +59,48 @@
      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
          <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-kwatery">Dodaj Kwatere</MudButton>
      </div>
+     }
  </MudContainer>
 
- @code {
+@code {
     private string searchString = string.Empty;
     private List<AccommodationDetails> AccommodationList = new List<AccommodationDetails>();
     private AccommodationDetails selectedAccommodation;
+    private bool isLoading = true;
 
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigate.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    Navigate.NavigateTo("/");
+                }
 
-            var accommodations = await Http.GetFromJsonAsync<List<AccommodationDetails>>("accommodations");
-            if (accommodations != null)
-             {
-                AccommodationList = accommodations;
-            }
-            else
-            {
-                Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var accommodations = await Http.GetFromJsonAsync<List<AccommodationDetails>>("accommodations");
+
+                if (accommodations != null)
+                {
+                    AccommodationList = accommodations;
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się załadować danych kwater.", Severity.Error);
+                }
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Błąd podczas ładowania pojazdów: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Błąd podczas ładowania kwater: {ex.Message}", Severity.Error);
         }
     }
 

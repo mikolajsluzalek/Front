@@ -10,6 +10,12 @@
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
+    @if (isLoading)
+    {
+        <MudTable Items="@VehiclesList" Hover="true" Loading="true" Dense="false" ReadOnly="false" Filter="new Func<VehicleDetails,bool>(FilterFunc)"> </MudTable>
+    }
+    else
+    {
     <MudTable Items="@VehiclesList" Hover="true" Dense="false" ReadOnly="false" Filter="new Func<VehicleDetails,bool>(FilterFunc)">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Lista Pojazdów</MudText>
@@ -57,6 +63,7 @@
      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
          <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-samochodowy">Dodaj Samochód</MudButton>
      </div>
+     }
 </MudContainer>
 
 
@@ -65,40 +72,45 @@
     private List<VehicleDetails> VehiclesList = new List<VehicleDetails>();
     private VehicleDetails vehicleBeforeEdit;
     private VehicleDetails selectedVehicle;
+    private bool isLoading = true;
 
 
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                NavigationManager.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    NavigationManager.NavigateTo("/");
+                }
 
-            var vehicles = await Http.GetFromJsonAsync<List<VehicleDetails>>("cars");
-            if (vehicles != null)
-            {
-                VehiclesList = vehicles.Select(veh => new VehicleDetails
-                    {
-                        Id = veh.Id,
-                        Make = veh.Model.Split(' ')[0],
-                        Model = string.Join(" ", veh.Model.Split(' ').Skip(1)),
-                        RegistrationNumber = veh.RegistrationNumber,
-                        InspectionTo = veh.InspectionTo,
-                        InsuranceTo = veh.InsuranceTo
-                    }).ToList();
-            }
-            else
-            {
-                Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var vehicles = await Http.GetFromJsonAsync<List<VehicleDetails>>("cars");
+                if (vehicles != null)
+                {
+                    VehiclesList = vehicles.Select(veh => new VehicleDetails
+                        {
+                            Id = veh.Id,
+                            Make = veh.Model.Split(' ')[0],
+                            Model = string.Join(" ", veh.Model.Split(' ').Skip(1)),
+                            RegistrationNumber = veh.RegistrationNumber,
+                            InspectionTo = veh.InspectionTo,
+                            InsuranceTo = veh.InsuranceTo
+                        }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Nie udało się załadować danych pojazdów.", Severity.Error);
+                }
             }
         }
         catch (Exception ex)

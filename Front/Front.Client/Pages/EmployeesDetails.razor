@@ -161,55 +161,62 @@
     private bool isSubmitting = false;
     private MudForm editForm;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                Navigation.NavigateTo("/");
-                return;
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    Navigation.NavigateTo("/");
+                }
 
-            employee = await Http.GetFromJsonAsync<EmployeeDetails>($"employee/{id}");
-            if (employee == null)
-            {
-                Snackbar.Add($"Pracownik o ID {id} nie istnieje.", Severity.Warning);
-            }
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-            var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-            if (projects != null)
-            {
-                projectId = projects.Select(pro => new ProjectIds
-                    {
-                        Id = pro.Id,
-                        Name = pro.Name
-                    }).ToList();
-            }
 
-            var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
-            if (cars != null)
-            {
-                carId = cars.Select(car => new CarIds
-                    {
-                        Id = car.Id,
-                        RegistrationNumber = car.RegistrationNumber
-                    }).ToList();
-            }
 
-            var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
-            if (accommodations != null)
-            {
-                accommodationId = accommodations.Select(acc => new AccommodationIds
-                    {
-                        Id = acc.Id,
-                        Address = acc.Address
-                    }).ToList();
+                employee = await Http.GetFromJsonAsync<EmployeeDetails>($"employee/{id}");
+
+                if (employee == null)
+                {
+                    Snackbar.Add($"Pracownik o ID {id} nie istnieje.", Severity.Warning);
+                }
+
+                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projects != null)
+                {
+                    projectId = projects.Select(pro => new ProjectIds
+                        {
+                            Id = pro.Id,
+                            Name = pro.Name
+                        }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
+                }
+
+                var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
+                if (cars != null)
+                {
+                    carId = cars.Select(car => new CarIds
+                        {
+                            Id = car.Id,
+                            RegistrationNumber = car.RegistrationNumber
+                        }).ToList();
+                }
+
+                var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
+                if (accommodations != null)
+                {
+                    accommodationId = accommodations.Select(acc => new AccommodationIds
+                        {
+                            Id = acc.Id,
+                            Address = acc.Address
+                        }).ToList();
+                }
             }
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -233,15 +240,6 @@
             throw new InvalidOperationException("Obiekt employee nie został zainicjalizowany.");
         }
 
-        employee.FirstName = string.IsNullOrWhiteSpace(employee.FirstName) ? null : employee.FirstName;
-        employee.LastName = string.IsNullOrWhiteSpace(employee.LastName) ? null : employee.LastName;
-        employee.PassportNumber = string.IsNullOrWhiteSpace(employee.PassportNumber) ? null : employee.PassportNumber;
-        employee.PESEL = string.IsNullOrWhiteSpace(employee.PESEL) ? null : employee.PESEL;
-        employee.Email = string.IsNullOrWhiteSpace(employee.Email) ? null : employee.Email;
-        employee.FatherName = string.IsNullOrWhiteSpace(employee.FatherName) ? null : employee.FatherName;
-        employee.MotherName = string.IsNullOrWhiteSpace(employee.MotherName) ? null : employee.MotherName;
-        employee.BankAccount = string.IsNullOrWhiteSpace(employee.BankAccount) ? null : employee.BankAccount;
-        employee.AddressPoland = string.IsNullOrWhiteSpace(employee.AddressPoland) ? null : employee.AddressPoland;
         employee.HomeAddress = string.IsNullOrWhiteSpace(employee.HomeAddress) ? null : employee.HomeAddress;
 
         if (employee.ResidenceCard == null)
@@ -261,7 +259,6 @@
         }
         else
         {
-            employee.Employment.ContractType = string.IsNullOrWhiteSpace(employee.Employment.ContractType) ? null : employee.Employment.ContractType;
             employee.Employment.StartDate = employee.Employment.StartDate.HasValue ? employee.Employment.StartDate : null;
             employee.Employment.EndDate = employee.Employment.EndDate.HasValue ? employee.Employment.EndDate : null;
             employee.Employment.Authorizations = string.IsNullOrWhiteSpace(employee.Employment.Authorizations) ? null : employee.Employment.Authorizations;
@@ -338,10 +335,10 @@
                     },
                     ResidenceCard = new
                     {
-                        employee.ResidenceCard.Id,
                         Bio = employee.ResidenceCard.Bio?.ToString("yyyy-MM-dd"),
                         Visa = employee.ResidenceCard.Visa?.ToString("yyyy-MM-dd"),
                         Tcard = employee.ResidenceCard.Tcard?.ToString("yyyy-MM-dd"),
+                        employee.ResidenceCard.Id,
                     },
                     employee.ProjectId,
                     employee.CarId,
@@ -455,11 +452,11 @@
         [JsonPropertyName("home_address")]
         public string? HomeAddress { get; set; }
         [JsonPropertyName("residence_card")]
-        public ResidenceCard? ResidenceCard { get; set; }
+        public ResidenceCard ResidenceCard { get; set; }
         [JsonPropertyName("employment")]
-        public Employment? Employment { get; set; }
+        public Employment Employment { get; set; }
         [JsonPropertyName("medicals")]
-        public Medicals? Medicals { get; set; }
+        public Medicals Medicals { get; set; }
         [JsonPropertyName("project_id")]
         public int ProjectId { get; set; }
         [JsonPropertyName("accommodation_id")]

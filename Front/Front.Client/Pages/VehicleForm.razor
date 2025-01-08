@@ -103,24 +103,27 @@
     private bool isLoading = true;
     private List<ProjectIds> projectList = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            if (string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
-                NavigationManager.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
+                    NavigationManager.NavigateTo("/");
+                }
 
-            projectList = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-            if (projectList == null)
-            {
-                Snackbar.Add($"Brak projektów.", Severity.Warning);
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                projectList = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projectList == null)
+                {
+                    Snackbar.Add($"Brak projektów.", Severity.Warning);
+                }
             }
         }
         catch (Exception ex)

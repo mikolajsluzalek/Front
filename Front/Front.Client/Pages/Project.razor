@@ -10,6 +10,12 @@
 
 <div style="margin-top: 2rem;" />
 <MudContainer MaxWidth="MaxWidth.Large">
+            @if (isLoading)
+    {
+        <MudTable Items="@ProjectList" Hover="true" Loading="true" Dense="false" ReadOnly="false" Filter="new Func<ProjectDetails,bool>(FilterFunc)"> </MudTable>
+    }
+    else
+    {
     <MudTable Items="@ProjectList" Hover="true" Dense="false" ReadOnly="false" CanCancelEdit="true"
               EditTrigger="TableEditTrigger.EditButton" EditButtonPosition="TableEditButtonPosition.End"
               ApplyButtonPosition="TableApplyButtonPosition.End"
@@ -63,6 +69,7 @@
         <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
             <MudButton Variant="Variant.Filled" Color="Color.Surface" Href="/formularz-projektowy">Dodaj Projekt</MudButton>
         </div>
+        }
     </MudContainer>
 
     @code {
@@ -71,29 +78,36 @@
     private ProjectDetails projectBeforeEdit;
     private ProjectDetails selectedProject;
     private bool isDetailsDialogOpen = false;
+    private bool isLoading = true;
 
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
         {
-            var token = await LocalStorage.GetItemAsync<string>("authToken");
-            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-
-            if (!string.IsNullOrEmpty(token))
+            if (firstRender)
             {
-                Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
-                NavigationManager.NavigateTo("/");
-            }
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
 
-            var projects = await Http.GetFromJsonAsync<List<ProjectDetails>>("projects");
-            if (projects != null)
-            {
-                ProjectList = projects;
-            }
-            else
-            {
-                Snackbar.Add("Brak danych projektów do wyświetlenia.", Severity.Warning);
+                if (string.IsNullOrEmpty(token))
+                {
+                    Snackbar.Add("Brak tokenu JWT. Użytkownik niezalogowany.", Severity.Error);
+                    NavigationManager.NavigateTo("/");
+                }
+
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var projects = await Http.GetFromJsonAsync<List<ProjectDetails>>("projects");
+                if (projects != null)
+                {
+                    ProjectList = projects;
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Brak danych projektów do wyświetlenia.", Severity.Warning);
+                }
             }
         }
         catch (Exception ex)

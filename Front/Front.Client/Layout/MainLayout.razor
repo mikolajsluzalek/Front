@@ -1,4 +1,10 @@
-﻿@inherits LayoutComponentBase
+﻿@using static System.Net.WebRequestMethods
+@inherits LayoutComponentBase
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@using MudBlazor.Components
+@using System.Text.Json.Serialization
 @inject NavigationManager NavigationManager
 
 
@@ -16,7 +22,7 @@
             <UserMenu />
         }
         <MudSpacer/>
-        <MudButton Href="/Login" StartIcon="@Icons.Material.Filled.Login" Color="Color.Inherit"></MudButton>
+        <MudButton OnClick="Logout" StartIcon="@Icons.Material.Filled.Login" Color="Color.Inherit"></MudButton>
     </MudAppBar>
     <MudMainContent>
         @Body
@@ -25,11 +31,49 @@
 </MudLayout>
 
 @code {
+    private bool IsLogIn = false;
     private bool ShouldShowNavMenu()
     {
         var currentUri = NavigationManager.Uri; 
         var relativeUri = NavigationManager.ToBaseRelativePath(currentUri);
 
-        return relativeUri == "" || relativeUri == "Login";
+        return relativeUri == "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (firstRender)
+            {
+                var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    IsLogIn = false;
+                }
+                else
+                {
+                    IsLogIn = true;
+                }
+            }
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas ładowania menu: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task Logout()
+    {
+        if(!IsLogIn)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            NavigationManager.NavigateTo("/");
+        }
     }
 }
