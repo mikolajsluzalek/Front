@@ -46,9 +46,9 @@
                     <MudTextField @bind-Value="accommodation.Contact.LastName" Label="Nazwisko" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="accommodation.Contact.PhoneNumber" Label="Numer Telefonu" />
+                    <MudTextField @bind-Value="accommodation.Contact.PhoneNumber" Label="Numer Telefonu" Validation="ValidatePhoneNumber" />
                 </MudItem>
-                            </MudGrid>
+                </MudGrid>
                 <!-- Dane płatności -->
                 <MudText Typo="Typo.h6" Class="mt-4">Dane Płatności</MudText>
                                             <MudGrid>
@@ -100,6 +100,17 @@
     private bool isLoading = true;
     private bool isSubmitting = false;
     private MudForm editForm;
+
+    private string ValidatePhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return "Numer telefonu jest wymagany.";
+        var phoneRegex = @"^\+\d{1,3} \d{7,15}$";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, phoneRegex))
+            return "Podaj poprawny numer telefonu (np. +48 123456789).";
+        return null;
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

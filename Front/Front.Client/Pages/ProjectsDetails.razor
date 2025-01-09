@@ -22,22 +22,22 @@
             <MudTextField @bind-Value="project.Name" Label="Nazwa" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.OfficeAddress" Label="Adres" />
+                    <MudTextField @bind-Value="project.OfficeAddress" Label="Adres" Required />
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.ProjectNIP" Label="NIP" Required="true" />
+            <MudTextField @bind-Value="project.ProjectNIP" Label="NIP" Required="true" Validation="ValidateNIP" />
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.FirstName" Label="Imię" />
+                    <MudTextField @bind-Value="project.FirstName" Label="Imię" Required />
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.LastName" Label="Nazwisko" />
+                    <MudTextField @bind-Value="project.LastName" Label="Nazwisko" Required />
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.Phone" Label="Telefon" />
+            <MudTextField @bind-Value="project.Phone" Label="Telefon" Validation="ValidatePhoneNumber"/>
             </MudItem>
             <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="project.Position" Label="Stanowisko" />
+                    <MudTextField @bind-Value="project.Position" Label="Stanowisko" Required />
             </MudItem>
             </MudGrid>
         </MudForm>
@@ -71,6 +71,42 @@
     private bool isLoading = true;
     private bool isSubmitting = false;
     private MudForm editForm;
+
+    private string ValidatePhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return "Numer telefonu jest wymagany.";
+        var phoneRegex = @"^\+\d{1,3} \d{7,15}$"; 
+        if (!System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, phoneRegex))
+            return "Podaj poprawny numer telefonu (np. +48 123456789).";
+        return null;
+    }
+
+    private string ValidateNIP(string nip)
+    {
+        if (string.IsNullOrWhiteSpace(nip))
+            return "Numer NIP jest wymagany.";
+
+        nip = nip.Replace("-", "").Replace(" ", "");
+
+        if (nip.Length != 10 || !long.TryParse(nip, out _))
+            return "Numer NIP musi składać się z dokładnie 10 cyfr.";
+
+        int[] weights = { 6, 5, 7, 2, 3, 4, 5, 6, 7 };
+
+        int sum = 0;
+        for (int i = 0; i < 9; i++)
+        {
+            sum += weights[i] * (nip[i] - '0');
+        }
+
+        int checksum = sum % 11;
+        if (checksum != (nip[9] - '0'))
+            return "Numer NIP jest niepoprawny.";
+
+        return null;
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

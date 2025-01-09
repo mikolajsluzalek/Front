@@ -19,28 +19,28 @@
                         <MudTextField @bind-Value="vehicle.Model" Label="Model" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.Color" Label="Kolor" />
+                         <MudTextField @bind-Value="vehicle.Color" Label="Kolor" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Required />
+                         <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Validation="ValidateRegistrationNumber" />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.Vin" Label="VIN" />
+                         <MudTextField @bind-Value="vehicle.Vin" Label="VIN" Validation="ValidateVIN"/>
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przegl¹d od" />
+                         <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przegl¹d od" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Przegl¹d do" />
+                         <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Przegl¹d do" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" />
+                         <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InsuranceTo" Label="Ubezpieczenie do" />
+                         <MudDatePicker @bind-Date="vehicle.InsuranceTo" Label="Ubezpieczenie do" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" />
+                         <MudTextField @bind-Value="vehicle.FleetCardNumber" Label="Numer Karty Floty" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
                          <MudSelect T="int" Label="Projekt" @bind-Value="vehicle.IdProject">
@@ -55,26 +55,26 @@
                 <MudText Typo="Typo.h6" Class="mt-4">Dane Serwisu</MudText>
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Service.ServiceName" Label="Nazwa Serwisu" />
+                        <MudTextField @bind-Value="vehicle.Service.ServiceName" Label="Nazwa Serwisu" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Service.Address" Label="Adres Serwisu" />
+                         <MudTextField @bind-Value="vehicle.Service.Address" Label="Adres Serwisu" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon Serwisu" />
+                        <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon Serwisu" Validation="ValidatePhoneNumber"/>
                     </MudItem>
                 </MudGrid>
 
                 <MudText Typo="Typo.h6" Class="mt-4">Dane Leasingu</MudText>
                 <MudGrid>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Leasing.Amount" Label="Kwota" Type="number" />
+                         <MudTextField @bind-Value="vehicle.Leasing.Amount" Label="Kwota" Type="number" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesiêczna Rata" Type="number" />
+                         <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesiêczna Rata" Type="number" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudNumericField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzieñ P³atnoœci" Min="1" Max="31" />
+                        <MudNumericField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzieñ P³atnoœci" Min="1" Max="31" Required/>
                     </MudItem>
                 </MudGrid>
 
@@ -102,6 +102,46 @@
         };
     private bool isLoading = true;
     private List<ProjectIds> projectList = new();
+
+    private string ValidatePhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return "Numer telefonu jest wymagany.";
+        var phoneRegex = @"^\+\d{1,3} \d{7,15}$"; // np. +48 123456789
+        if (!System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, phoneRegex))
+            return "Podaj poprawny numer telefonu (np. +48 123456789).";
+        return null;
+    }
+
+
+    private string ValidateRegistrationNumber(string registrationNumber)
+    {
+        if (string.IsNullOrWhiteSpace(registrationNumber))
+            return "Numer rejestracyjny jest wymagany.";
+
+        var registrationRegex = @"^[A-Z]{2,3}[0-9]{1,5}[A-Z]{0,2}$";
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(registrationNumber.ToUpper(), registrationRegex))
+            return "Podaj poprawny numer rejestracyjny (np. ABC12345 lub AB123C).";
+
+        return null;
+    }
+
+    private string ValidateVIN(string vin)
+    {
+        if (string.IsNullOrWhiteSpace(vin))
+            return "Numer VIN jest wymagany.";
+
+        if (vin.Length != 17)
+            return "Numer VIN musi mieæ dok³adnie 17 znaków.";
+
+        var vinRegex = @"^[A-HJ-NPR-Z0-9]{17}$";
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(vin.ToUpper(), vinRegex))
+            return "Podaj poprawny numer VIN (17 znaków, bez liter I, O, Q).";
+
+        return null;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
