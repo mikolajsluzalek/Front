@@ -39,6 +39,12 @@
                         <MudTextField @bind-Value="employee.MotherName" Label="Imię matki" />
                     </MudItem>
                     <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.MaidenName" Label="Nazwisko panieńskie" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="employee.MotherMaidenName" Label="Nazwisko panieńskie matki" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="employee.BankAccount" Label="Konto bankowe" />
                     </MudItem>
                     <MudItem xs="12" md="6">
@@ -177,6 +183,8 @@
                     DateOfBirth = employee.DateOfBirth?.ToString("yyyy-MM-dd"),
                     employee.FatherName,
                     employee.MotherName,
+                    employee.MaidenName,
+                    employee.MotherMaidenName,
                     employee.BankAccount,
                     employee.AddressPoland,
                     employee.HomeAddress,
@@ -314,6 +322,10 @@
         public string FatherName { get; set; }
         [JsonPropertyName("mother_name")]
         public string MotherName { get; set; }
+        [JsonPropertyName("maiden_name")]
+        public string MaidenName { get; set; }
+        [JsonPropertyName("mother_maiden_name")]
+        public string MotherMaidenName { get; set; }
         [JsonPropertyName("bank_account")]
         public string BankAccount { get; set; }
         [JsonPropertyName("address_poland")]
