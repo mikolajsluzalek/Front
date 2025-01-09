@@ -1,1 +1,1 @@
-web: cd $HOME/heroku_output && ./Front/Front.Client
+web: cd $HOME/heroku_output && dir && ./Front/Front.Client
