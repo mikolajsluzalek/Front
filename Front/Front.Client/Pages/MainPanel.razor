@@ -6,7 +6,15 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
+
+@if (isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (@data != null)
+    {
 <MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
+
     <MudGrid>
         <MudSpacer/>
         <MudItem xs="12" sm="4">
@@ -102,9 +110,12 @@
     </MudGrid>
 
 </MudContainer>
+}
 
 
     @code {
+    private bool isLoading = true;
+
     // Donut Chart
     public double[] data;
     public string[] labels;
@@ -186,6 +197,8 @@
                             TypDokumentu = doc.Document,
                             Data = doc.Date.ToString("dd.MM.yyyy")
                         }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
                 }
                 else
                 {
