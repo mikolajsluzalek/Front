@@ -42,8 +42,6 @@
                     password = _password
                 };
 
-                Console.WriteLine($"Wysyłany JSON: {System.Text.Json.JsonSerializer.Serialize(payload)}");
-
                 // Wysyłanie żądania POST do "login"
                 var response = await Http.PostAsJsonAsync("login", payload);
 

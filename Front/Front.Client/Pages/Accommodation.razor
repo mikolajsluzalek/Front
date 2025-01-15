@@ -37,11 +37,11 @@
             <MudTh>Akcje</MudTh>
         </HeaderContent>
         <RowTemplate>
-<MudTd DataLabel="Miasto">@context.City</MudTd>
-<MudTd DataLabel="Adres">@context.AccommodationAddress</MudTd>
-<MudTd DataLabel="Ilość Miejsc">@context.NumberOfPlaces</MudTd>
-<MudTd DataLabel="Koszt Łączny">@context.Payment?.Cost.ToString("C")</MudTd>
-<MudTd DataLabel="Koszt/Pracownik">@context.CostPerEmployee.ToString("C")</MudTd>
+                <MudTd DataLabel="Miasto">@context.City</MudTd>
+                    <MudTd DataLabel="Adres">@context.AccommodationAddress</MudTd>
+                    <MudTd DataLabel="Ilość Miejsc">@context.NumberOfPlaces</MudTd>
+                    <MudTd DataLabel="Koszt Łączny">@($"{context.Payment?.Cost:N2} zł")</MudTd>
+                    <MudTd DataLabel="Koszt/Pracownik">@($"{context.CostPerEmployee:N2} zł")</MudTd>
 <MudTd DataLabel="Akcje">
     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Href="@($"/kwatery/szczegoly/{context.Id}")">
         Szczegóły

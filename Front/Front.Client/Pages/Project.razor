@@ -38,7 +38,6 @@
             <col style="width:50px;" />
         </ColGroup>
         <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.Id)">ID</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.Name)">Nazwa</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.OfficeAddress)">Adres</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<ProjectDetails, object>(x => x.ProjectNIP)">NIP</MudTableSortLabel></MudTh>
@@ -48,7 +47,6 @@
             <MudTh>Akcje</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="ID">@context.Id</MudTd>
                 <MudTd DataLabel="Nazwa">@context.Name</MudTd>
                 <MudTd DataLabel="Adres">@context.OfficeAddress</MudTd>
                 <MudTd DataLabel="NIP">@context.ProjectNIP</MudTd>
