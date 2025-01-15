@@ -8,8 +8,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddScoped(sp => new HttpClient
 {
-    //BaseAddress = new Uri("https://pic-api-454878d86768.herokuapp.com/")
-    BaseAddress = new Uri("http://localhost:8000")
+    BaseAddress = new Uri("https://pic-api-454878d86768.herokuapp.com/")
+    //BaseAddress = new Uri("http://localhost:8000")
 
 });
 
