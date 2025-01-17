@@ -105,7 +105,7 @@
                 <MudSelect @bind-Value="employee.ProjectId" Label="Nazwa Projektu" Required="true">
                     @foreach (var project in projectId)
                     {
-                        <MudSelectItem Value="@(project.Id)">@project.Name</MudSelectItem>
+                        <MudSelectItem Value="project.Id">@project.Name</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -113,7 +113,7 @@
                 <MudSelect @bind-Value="employee.AccommodationId" Label="Adres Kwatery">
                     @foreach (var accomodation in accommodationId)
                     {
-                        <MudSelectItem Value="@(accomodation.Id)">@accomodation.Address</MudSelectItem>
+                        <MudSelectItem Value="accomodation.Id">@accomodation.Address</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -121,7 +121,7 @@
                 <MudSelect @bind-Value="employee.CarId" Label="Rejestracja samochodu">
                     @foreach (var car in carId)
                     {
-                        <MudSelectItem Value="@(car.Id)">@car.RegistrationNumber</MudSelectItem>
+                        <MudSelectItem Value="car.Id">@car.RegistrationNumber</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -232,18 +232,6 @@
                     Snackbar.Add($"Pracownik o ID {id} nie istnieje.", Severity.Warning);
                 }
 
-                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
-                if (projects != null)
-                {
-                    projectId = projects.Select(pro => new ProjectIds
-                        {
-                            Id = pro.Id,
-                            Name = pro.Name
-                        }).ToList();
-                    isLoading = false;
-                    StateHasChanged();
-                }
-
                 var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
                 if (cars != null)
                 {
@@ -263,6 +251,19 @@
                             Address = acc.Address
                         }).ToList();
                 }
+
+                var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
+                if (projects != null)
+                {
+                    projectId = projects.Select(pro => new ProjectIds
+                        {
+                            Id = pro.Id,
+                            Name = pro.Name
+                        }).ToList();
+                    isLoading = false;
+                    StateHasChanged();
+                }
+                
             }
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
