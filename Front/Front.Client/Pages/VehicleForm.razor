@@ -28,10 +28,10 @@
                          <MudTextField @bind-Value="vehicle.Vin" Label="VIN" Validation="ValidateVIN"/>
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przegl¹d od" Required />
+                         <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przeglï¿½d od" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Przegl¹d do" Required />
+                         <MudDatePicker @bind-Date="vehicle.InspectionTo" Label="Przeglï¿½d do" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
                          <MudDatePicker @bind-Date="vehicle.InsuranceFrom" Label="Ubezpieczenie od" Required />
@@ -71,10 +71,10 @@
                          <MudTextField @bind-Value="vehicle.Leasing.Amount" Label="Kwota" Type="number" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesiêczna Rata" Type="number" Required />
+                         <MudTextField @bind-Value="vehicle.Leasing.MonthlyPayment" Label="Miesiï¿½czna Rata" Type="number" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudNumericField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzieñ P³atnoœci" Min="1" Max="31" Required/>
+                        <MudNumericField @bind-Value="vehicle.Leasing.PaymentDay" Label="Dzieï¿½ Pï¿½atnoï¿½ci" Min="1" Max="31" Required/>
                     </MudItem>
                 </MudGrid>
 
@@ -134,12 +134,12 @@
             return "Numer VIN jest wymagany.";
 
         if (vin.Length != 17)
-            return "Numer VIN musi mieæ dok³adnie 17 znaków.";
+            return "Numer VIN musi mieï¿½ dokï¿½adnie 17 znakï¿½w.";
 
         var vinRegex = @"^[A-HJ-NPR-Z0-9]{17}$";
 
         if (!System.Text.RegularExpressions.Regex.IsMatch(vin.ToUpper(), vinRegex))
-            return "Podaj poprawny numer VIN (17 znaków, bez liter I, O, Q).";
+            return "Podaj poprawny numer VIN (17 znakï¿½w, bez liter I, O, Q).";
 
         return null;
     }
@@ -154,7 +154,7 @@
 
                 if (string.IsNullOrEmpty(token))
                 {
-                    Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
+                    Snackbar.Add("Brak tokenu JWT. Uï¿½ytkownik niezalogowany.", Severity.Error);
                     NavigationManager.NavigateTo("/");
                 }
 
@@ -163,13 +163,13 @@
                 projectList = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
                 if (projectList == null)
                 {
-                    Snackbar.Add($"Brak projektów.", Severity.Warning);
+                    Snackbar.Add($"Brak projektï¿½w.", Severity.Warning);
                 }
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"B³¹d podczas ³adowania projektów: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Bï¿½ï¿½d podczas ï¿½adowania projektï¿½w: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -191,7 +191,7 @@
                 var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
                 if (string.IsNullOrEmpty(token))
                 {
-                    Snackbar.Add("Brak tokenu JWT. U¿ytkownik niezalogowany.", Severity.Error);
+                    Snackbar.Add("Brak tokenu JWT. Uï¿½ytkownik niezalogowany.", Severity.Error);
                     return;
                 }
 
@@ -226,23 +226,23 @@
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Samochod zosta³ dodany.", Severity.Success);
+                    Snackbar.Add("Samochod zostaï¿½ dodany.", Severity.Success);
                     await Task.Delay(1000);
                     NavigationManager.NavigateTo("/samochody");
                 }
                 else
                 {
-                    Snackbar.Add("Nie uda³o siê zapisaæ zmian.", Severity.Error);
+                    Snackbar.Add("Nie udaï¿½o siï¿½ zapisaï¿½ zmian.", Severity.Error);
                 }
             }
             else
             {
-                Snackbar.Add("Popraw b³êdy w formularzu przed zapisaniem.", Severity.Warning);
+                Snackbar.Add("Popraw bï¿½ï¿½dy w formularzu przed zapisaniem.", Severity.Warning);
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"B³¹d podczas zapisywania zmian: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Bï¿½ï¿½d podczas zapisywania zmian: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -252,7 +252,7 @@
 
     private void Cancel()
     {
-        Snackbar.Add("Anulowano edycjê formularza.", Severity.Warning);
+        Snackbar.Add("Anulowano edycjï¿½ formularza.", Severity.Warning);
     }
 
     public class ProjectIds
