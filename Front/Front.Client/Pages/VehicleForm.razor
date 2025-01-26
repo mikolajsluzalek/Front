@@ -22,10 +22,10 @@
                          <MudTextField @bind-Value="vehicle.Color" Label="Kolor" Required />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Validation="ValidateRegistrationNumber" />
+                         <MudTextField @bind-Value="vehicle.RegistrationNumber" Label="Numer Rejestracyjny" Required Validation="ValidateRegistrationNumber" />
                      </MudItem>
                      <MudItem xs="12" md="6">
-                         <MudTextField @bind-Value="vehicle.Vin" Label="VIN" Validation="ValidateVIN"/>
+                         <MudTextField @bind-Value="vehicle.Vin" Label="VIN" Required Validation="ValidateVIN" />
                      </MudItem>
                      <MudItem xs="12" md="6">
                          <MudDatePicker @bind-Date="vehicle.InspectionFrom" Label="Przegl¹d od" Required />
@@ -61,7 +61,7 @@
                          <MudTextField @bind-Value="vehicle.Service.Address" Label="Adres Serwisu" Required />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon Serwisu" Validation="ValidatePhoneNumber"/>
+                        <MudTextField @bind-Value="vehicle.Service.PhoneNumber" Label="Telefon Serwisu" Required Validation="ValidatePhoneNumber"/>
                     </MudItem>
                 </MudGrid>
 
@@ -93,7 +93,7 @@
     </MudCard>
 </MudContainer>
 
-@code {
+ @code {
     private MudForm form;
     private VehicleDetails vehicle = new VehicleDetails
         {

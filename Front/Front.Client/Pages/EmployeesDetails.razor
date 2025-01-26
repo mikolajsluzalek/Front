@@ -159,6 +159,12 @@
             Employment = new Employment(),
             Medicals = new Medicals()
         };
+    private EmployeeDetails employee2 = new EmployeeDetails
+        {
+            ResidenceCard = new ResidenceCard(),
+            Employment = new Employment(),
+            Medicals = new Medicals()
+        };
     private List<ProjectIds> projectId = new List<ProjectIds>();
     private List<CarIds> carId = new List<CarIds>();
     private List<AccommodationIds> accommodationId = new List<AccommodationIds>();
@@ -230,6 +236,9 @@
                 if (employee == null)
                 {
                     Snackbar.Add($"Pracownik o ID {id} nie istnieje.", Severity.Warning);
+                }else
+                {
+                    employee2 = employee;
                 }
 
                 var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
@@ -240,6 +249,7 @@
                             Id = car.Id,
                             RegistrationNumber = car.RegistrationNumber
                         }).ToList();
+
                 }
 
                 var accommodations = await Http.GetFromJsonAsync<List<AccommodationIds>>("accommodation/addresses");
@@ -250,6 +260,7 @@
                             Id = acc.Id,
                             Address = acc.Address
                         }).ToList();
+
                 }
 
                 var projects = await Http.GetFromJsonAsync<List<ProjectIds>>("project/names");
@@ -261,9 +272,9 @@
                             Name = pro.Name
                         }).ToList();
                     isLoading = false;
-                    StateHasChanged();
                 }
-                
+                StateHasChanged();
+
             }
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -333,6 +344,13 @@
     private async Task SaveChanges()
     {
         isSubmitting = true;
+
+        if(employee == employee2)
+        {
+            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Success);
+            await Task.Delay(1000);
+            Navigation.NavigateTo("/pracownicy");
+        }
         NormalizeEmployeeData(); 
 
 
