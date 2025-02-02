@@ -1,5 +1,6 @@
 ﻿@page "/pracownicy/szczegoly/{id:int}"
 @using System.Text.Json.Serialization
+@using System.Text.Json
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
@@ -238,7 +239,7 @@
                     Snackbar.Add($"Pracownik o ID {id} nie istnieje.", Severity.Warning);
                 }else
                 {
-                    employee2 = employee;
+                    employee2 = CloneEmployee(employee);
                 }
 
                 var cars = await Http.GetFromJsonAsync<List<CarIds>>("car/numbers");
@@ -290,6 +291,63 @@
             isLoading = false;
         }
     }
+
+    private EmployeeDetails CloneEmployee(EmployeeDetails source)
+    {
+        return JsonSerializer.Deserialize<EmployeeDetails>(JsonSerializer.Serialize(source));
+    }
+
+    private bool HasChanges(EmployeeDetails e1, EmployeeDetails e2)
+    {
+        if (e1 == null || e2 == null) return false;
+
+        return e1.FirstName != e2.FirstName ||
+               e1.LastName != e2.LastName ||
+               e1.PassportNumber != e2.PassportNumber ||
+               e1.PESEL != e2.PESEL ||
+               e1.Email != e2.Email ||
+               e1.DateOfBirth != e2.DateOfBirth ||
+               e1.FatherName != e2.FatherName ||
+               e1.MotherName != e2.MotherName ||
+               e1.MaidenName != e2.MaidenName ||
+               e1.MotherMaidenName != e2.MotherMaidenName ||
+               e1.BankAccount != e2.BankAccount ||
+               e1.AddressPoland != e2.AddressPoland ||
+               e1.HomeAddress != e2.HomeAddress ||
+               e1.ProjectId != e2.ProjectId ||
+               e1.AccommodationId != e2.AccommodationId ||
+               e1.CarId != e2.CarId ||
+               HasResidenceCardChanges(e1.ResidenceCard, e2.ResidenceCard) ||
+               HasEmploymentChanges(e1.Employment, e2.Employment) ||
+               HasMedicalsChanges(e1.Medicals, e2.Medicals);
+    }
+
+    private bool HasResidenceCardChanges(ResidenceCard r1, ResidenceCard r2)
+    {
+        if (r1 == null || r2 == null) return false;
+        return r1.Bio != r2.Bio ||
+               r1.Visa != r2.Visa ||
+               r1.Tcard != r2.Tcard;
+    }
+
+    private bool HasEmploymentChanges(Employment e1, Employment e2)
+    {
+        if (e1 == null || e2 == null) return false;
+        return e1.ContractType != e2.ContractType ||
+               e1.StartDate != e2.StartDate ||
+               e1.EndDate != e2.EndDate ||
+               e1.Authorizations != e2.Authorizations;
+    }
+
+    private bool HasMedicalsChanges(Medicals m1, Medicals m2)
+    {
+        if (m1 == null || m2 == null) return false;
+        return m1.OshValidUntil != m2.OshValidUntil ||
+               m1.PsychotestsValidUntil != m2.PsychotestsValidUntil ||
+               m1.MedicalValidUntil != m2.MedicalValidUntil ||
+               m1.SanitaryValidUntil != m2.SanitaryValidUntil;
+    }
+
 
     private void NormalizeEmployeeData()
     {
@@ -345,11 +403,12 @@
     {
         isSubmitting = true;
 
-        if(employee == employee2)
+        if (!HasChanges(employee, employee2))
         {
             Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Success);
             await Task.Delay(1000);
             Navigation.NavigateTo("/pracownicy");
+            return;
         }
         NormalizeEmployeeData(); 
 
