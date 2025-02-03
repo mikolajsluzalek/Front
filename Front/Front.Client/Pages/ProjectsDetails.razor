@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @rendermode InteractiveWebAssembly
 @using System.Runtime.InteropServices
+@using System.Text.Json
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -68,6 +69,7 @@
     public int id { get; set; }
 
     private ProjectDetails project;
+    private ProjectDetails project2;
     private bool isLoading = true;
     private bool isSubmitting = false;
     private MudForm editForm;
@@ -95,6 +97,11 @@
         return null;
     }
 
+    private ProjectDetails CloneProject(ProjectDetails source)
+    {
+        return JsonSerializer.Deserialize<ProjectDetails>(JsonSerializer.Serialize(source));
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -113,6 +120,7 @@
                 Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
                 project = await Http.GetFromJsonAsync<ProjectDetails>($"project/{id}");
+                project2 = CloneProject(project);
                 if (project == null)
                 {
                     Snackbar.Add($"Projekt o ID {id} nie istnieje.", Severity.Warning);
@@ -135,9 +143,33 @@
         }
     }
 
+    private bool HasChanges(ProjectDetails p1, ProjectDetails p2)
+    {
+        if (p1 == null || p2 == null) return false;
+
+        return p1.Name != p2.Name ||
+               p1.OfficeAddress != p2.OfficeAddress ||
+               p1.ProjectNIP != p2.ProjectNIP ||
+               p1.FirstName != p2.FirstName ||
+               p1.LastName != p2.LastName ||
+               p1.Phone != p2.Phone ||
+               p1.Position != p2.Position;
+    }
+
+
+
     private async Task SaveChanges()
     {
         isSubmitting = true;
+
+        if (!HasChanges(project, project2))
+        {
+            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Warning);
+            await Task.Delay(1000);
+            Navigation.NavigateTo("/projekty");
+            return;
+        }
+
 
         try
         {

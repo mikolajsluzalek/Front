@@ -1,5 +1,6 @@
 ﻿@page "/samochod/szczegoly/{id:int}"
 @using System.Text.Json.Serialization
+@using System.Text.Json
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
@@ -102,6 +103,7 @@
     [Parameter]
     public int id { get; set; }
 
+    private VehicleDetails vehicle2;
     private VehicleDetails vehicle;
     private ProjectIds projects;
     private List<ProjectIds> projectId = new List<ProjectIds>();
@@ -150,6 +152,11 @@
         return null;
     }
 
+    private VehicleDetails CloneVehicle(VehicleDetails source)
+    {
+        return JsonSerializer.Deserialize<VehicleDetails>(JsonSerializer.Serialize(source));
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -169,6 +176,7 @@
 
 
                 vehicle = await Http.GetFromJsonAsync<VehicleDetails>($"car/{id}");
+                vehicle2 = CloneVehicle(vehicle);
                 if (vehicle == null)
                 {
                     Snackbar.Add($"Nie znaleziono pojazdu o ID {id}.", Severity.Warning);
@@ -216,6 +224,15 @@
     private async Task SaveChanges()
     {
         isSubmitting = true;
+
+        if (!HasChanges(vehicle, vehicle2))
+        {
+            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Warning);
+            await Task.Delay(1000);
+            NavigationManager.NavigateTo("/samochody");
+            return;
+        }
+
 
         try
         {
@@ -295,6 +312,42 @@
     {
         NavigationManager.NavigateTo("/samochody");
     }
+
+    private bool HasChanges(VehicleDetails v1, VehicleDetails v2)
+    {
+        if (v1 == null || v2 == null) return false;
+
+        return v1.Model != v2.Model ||
+               v1.Color != v2.Color ||
+               v1.RegistrationNumber != v2.RegistrationNumber ||
+               v1.Vin != v2.Vin ||
+               v1.InspectionFrom != v2.InspectionFrom ||
+               v1.InspectionTo != v2.InspectionTo ||
+               v1.InsuranceFrom != v2.InsuranceFrom ||
+               v1.InsuranceTo != v2.InsuranceTo ||
+               v1.FleetCardNumber != v2.FleetCardNumber ||
+               v1.IdProject != v2.IdProject ||
+               HasServiceChanges(v1.Service, v2.Service) ||
+               HasLeasingChanges(v1.Leasing, v2.Leasing);
+    }
+
+    private bool HasServiceChanges(ServiceDetails s1, ServiceDetails s2)
+    {
+        if (s1 == null || s2 == null) return false;
+        return s1.ServiceName != s2.ServiceName ||
+               s1.Address != s2.Address ||
+               s1.PhoneNumber != s2.PhoneNumber;
+    }
+
+    private bool HasLeasingChanges(LeasingDetails l1, LeasingDetails l2)
+    {
+        if (l1 == null || l2 == null) return false;
+        return l1.Amount != l2.Amount ||
+               l1.MonthlyPayment != l2.MonthlyPayment ||
+               l1.PaymentDay != l2.PaymentDay;
+    }
+
+
 
     private async Task DeleteVehicle()
     {

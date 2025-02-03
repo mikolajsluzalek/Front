@@ -405,7 +405,7 @@
 
         if (!HasChanges(employee, employee2))
         {
-            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Success);
+            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Warning);
             await Task.Delay(1000);
             Navigation.NavigateTo("/pracownicy");
             return;

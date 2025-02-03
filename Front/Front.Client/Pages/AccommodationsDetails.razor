@@ -1,5 +1,6 @@
 ﻿@page "/kwatery/szczegoly/{id:int}"
 @using System.Text.Json.Serialization
+@using System.Text.Json
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
@@ -96,6 +97,7 @@
     public int id { get; set; }
 
     private AccommodationDetails accommodation;
+    private AccommodationDetails accommodation2;
     private List<ProjectIds> projectId = new List<ProjectIds>();
     private bool isLoading = true;
     private bool isSubmitting = false;
@@ -121,6 +123,12 @@
         return null;
     }
 
+    private AccommodationDetails CloneAccommodation(AccommodationDetails source)
+    {
+        return JsonSerializer.Deserialize<AccommodationDetails>(JsonSerializer.Serialize(source));
+    }
+
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
@@ -139,6 +147,7 @@
 
 
                 accommodation = await Http.GetFromJsonAsync<AccommodationDetails>($"accommodation/{id}");
+                accommodation2 = CloneAccommodation(accommodation);
                 if (accommodation == null)
                 {
                     Snackbar.Add($"Nie znaleziono kwatery o ID {id}.", Severity.Warning);
@@ -174,6 +183,15 @@
     private async Task SaveChanges()
     {
         isSubmitting = true;
+
+        if (!HasChanges(accommodation, accommodation2))
+        {
+            Snackbar.Add("Zmiany nie zostały wykonane.", Severity.Warning);
+            await Task.Delay(1000);
+            Navigation.NavigateTo("/kwatery");
+            return;
+        }
+
 
         try
         {
@@ -236,6 +254,37 @@
             isSubmitting = false;
         }
     }
+
+    private bool HasChanges(AccommodationDetails a1, AccommodationDetails a2)
+    {
+        if (a1 == null || a2 == null) return false;
+
+        return a1.City != a2.City ||
+               a1.AccommodationAddress != a2.AccommodationAddress ||
+               a1.NumberOfPlaces != a2.NumberOfPlaces ||
+               a1.ProjectId != a2.ProjectId ||
+               HasContactChanges(a1.Contact, a2.Contact) ||
+               HasPaymentChanges(a1.Payment, a2.Payment);
+    }
+
+    private bool HasContactChanges(ContactDetails c1, ContactDetails c2)
+    {
+        if (c1 == null || c2 == null) return false;
+        return c1.FirstName != c2.FirstName ||
+               c1.LastName != c2.LastName ||
+               c1.PhoneNumber != c2.PhoneNumber;
+    }
+
+    private bool HasPaymentChanges(PaymentDetails p1, PaymentDetails p2)
+    {
+        if (p1 == null || p2 == null) return false;
+        return p1.Cost != p2.Cost ||
+               p1.Deposit != p2.Deposit ||
+               p1.Contract != p2.Contract ||
+               p1.AccountNumber != p2.AccountNumber ||
+               p1.PaymentDay != p2.PaymentDay;
+    }
+
 
     private async Task DeleteAccommodation()
     {
